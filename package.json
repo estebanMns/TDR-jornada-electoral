@@ -8,46 +8,33 @@
   },
   "scripts": {
     "dev": "pnpm --filter @preconteo/web dev",
-    "build": "pnpm --filter @preconteo/web build",
-    "start": "pnpm --filter @preconteo/web start",
-    "test": "pnpm -r --if-present test",
-    "lint": "eslint .",
-    "format": "prettier --write .",
-    "seed": "node scripts/seed.js",
-    "fake:dudosas": "pnpm --filter @preconteo/web fake:dudosas",
-    "smoke": "pnpm --filter @preconteo/web smoke"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.0",
-    "eslint": "^9.39.0",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "globals": "^16.5.0",
-    "prettier": "^3.6.2"
-  "name": "electoral",
-  "private": true,
-  "type": "module",
-  "engines": {
-    "node": ">=22",
-    "pnpm": ">=10"
-  },
-  "scripts": {
     "dev:server": "pnpm --filter @electoral/server dev",
     "dev:web": "pnpm --filter @electoral/web dev",
     "build": "pnpm -r build",
+    "start": "pnpm --filter @preconteo/web start",
     "typecheck": "tsc -p scripts && pnpm -r typecheck",
-    "test": "pnpm -r test",
+    "test": "pnpm -r --if-present test",
+    "lint": "eslint .",
+    "format": "prettier --write .",
     "seed": "tsx scripts/seed.ts",
     "fake-acta": "tsx scripts/fake-acta.ts",
-    "dev-token": "tsx scripts/dev-token.ts"
+    "fake:dudosas": "pnpm --filter @preconteo/web fake:dudosas",
+    "dev-token": "tsx scripts/dev-token.ts",
+    "smoke": "pnpm --filter @preconteo/web smoke"
   },
   "devDependencies": {
     "@electoral/shared": "workspace:*",
+    "@eslint/js": "^9.39.0",
     "@supabase/supabase-js": "^2.118.0",
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "^22.10.0",
     "bcryptjs": "^3.0.3",
+    "eslint": "^9.39.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^16.5.0",
     "ioredis": "^5.11.1",
+    "prettier": "^3.6.2",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
   }
