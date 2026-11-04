@@ -266,6 +266,32 @@ describe('Auditor resolution', () => {
     });
     expect(again.result).toBe('NOT_UNDER_REVIEW');
   });
+
+  it('rejects a decision whose fencing token is not newer than the last applied one', async () => {
+    const juror = jurorFor(firstTable);
+    await service.submit({
+      submission: buildSubmission(firstTable, { doubtful: true }),
+      idempotencyKey: newIdempotencyKey(),
+      juror,
+    });
+    await service.applyResolution({ actaId: firstTable.actaId, version: 1, decision: 'REJECT', auditor: 'b', fencing: 9 });
+
+    // The juror retransmits a corrected version, which is doubtful again.
+    await service.submit({
+      submission: buildSubmission(firstTable, { version: 2, doubtful: true, random: createRandom(3) }),
+      idempotencyKey: newIdempotencyKey(),
+      juror,
+    });
+    const late = await service.applyResolution({
+      actaId: firstTable.actaId,
+      version: 2,
+      decision: 'APPROVE',
+      auditor: 'a',
+      fencing: 8,
+    });
+    expect(late.result).toBe('STALE_FENCING');
+    expect(await readTotals(redis, redisKeys.totalsDepartment())).toEqual({});
+  });
 });
 
 function chunkPairs(flat: string[]): [string, string][] {

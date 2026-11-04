@@ -57,7 +57,7 @@ for _, id in ipairs(ctx.rankFields) do rankable[id] = true end
 -- --------------------------------------------------------------- state
 
 local state = redis.call('HMGET', K_ACTA,
-  'vmax', 'vapplied', 'hash', 'status', 'appliedVotes', 'appliedVoters', 'receiptId', 'registeredAt', 'resolvedVersion')
+  'vmax', 'vapplied', 'hash', 'status', 'appliedVotes', 'appliedVoters', 'receiptId', 'registeredAt', 'resolvedVersion', 'fencing')
 local vmax = tonumber(state[1]) or 0
 local vapplied = tonumber(state[2]) or 0
 local storedHash = state[3]
@@ -67,6 +67,7 @@ local appliedVoters = tonumber(state[6]) or 0
 local storedReceiptId = state[7]
 local storedRegisteredAt = tonumber(state[8])
 local resolvedVersion = tonumber(state[9]) or 0
+local lastFencing = tonumber(state[10]) or -1
 
 -- --------------------------------------------------------------- helpers
 
@@ -198,6 +199,10 @@ end
 -- --------------------------------------------------------------- RESOLUTION
 
 if ctx.mode == 'RESOLUTION' then
+  -- Fencing: a decision taken under an older lock than one already applied is late.
+  if ctx.fencing <= lastFencing then
+    return cjson.encode({ result = 'STALE_FENCING', status = status })
+  end
   if ctx.version < vmax then
     return cjson.encode({ result = 'OBSOLETE', status = status })
   end
@@ -222,7 +227,7 @@ if ctx.mode == 'RESOLUTION' then
 
   -- The verification module already closed the case and the queue entry.
   redis.call('HSET', K_ACTA, 'status', newStatus, 'reason', ctx.decision, 'resolvedVersion', ctx.version,
-    'updatedAt', ctx.tsRx)
+    'fencing', ctx.fencing, 'updatedAt', ctx.tsRx)
 
   local resolution = {
     actaId = ctx.actaId, version = ctx.version, status = newStatus, decision = ctx.decision,

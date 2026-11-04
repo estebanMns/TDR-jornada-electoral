@@ -22,11 +22,13 @@
 /README.md                                @equipo-meneses
 
 # --- Jose: actas ---
+/apps/server/                             @equipo-jose
+/apps/jurado/                             @equipo-jose
 /apps/web/src/server/modules/actas/       @equipo-jose
-/apps/web/src/features/jurado/            @equipo-jose
-/apps/web/src/app/(jurado)/               @equipo-jose
+/apps/web/test/actas/                     @equipo-jose
+/infra/Dockerfile.actas                   @equipo-jose @equipo-meneses
 /supabase/migrations/010_*                @equipo-jose
-/scripts/seed.js                          @equipo-jose
+/scripts/                                 @equipo-jose
 
 # --- Evelyn: público, ops UI, sistema de diseño, carga ---
 /apps/web/src/server/modules/publico/     @equipo-evelyn
@@ -38,3 +40,4 @@
 
 # --- Contratos: aprobación de los tres ---
 /packages/shared/                         @equipo-meneses @equipo-jose @equipo-evelyn
+/packages/contracts/                      @equipo-meneses @equipo-jose @equipo-evelyn

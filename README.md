@@ -62,7 +62,7 @@ apps/web/
   test/                             # vitest contra Redis real
   scripts/                          # fake-dudosas.js, smoke-dos-instancias.js
 packages/shared/                    # contratos (redisKeys, roles, schemas zod, regla contable)
-infra/                              # Dockerfile, compose (prod y local), nginx, redis, deploy
+infra/                              # Dockerfiles (app, actas, nginx), compose (prod y local), nginx, redis, deploy
 supabase/migrations/001_plataforma.sql
 ```
 
@@ -117,9 +117,36 @@ Todos son **aditivos**:
 - `resolver` acepta `sufragantes` opcional (para corregir un caso `SUFRAGANTES_EXCEDEN`).
 - `aplicarResolucion` recibe también `motivo` y `sufragantes`. Jose debe **rechazar resoluciones con `fencing` menor** al último aplicado para esa acta.
 
+## Parte de Jose: actas (RF-1, RF-2, RF-3, RT-6)
+
+La ingesta corre como **servicio aparte** (TypeScript + Fastify) junto a la plataforma; nginx enruta `/api/actas` a `actas1…actas8` y sirve la PWA del jurado en `/jurado/`. Los dos lados se hablan solo por Redis y por el puerto `actasService` (ver *Integración*).
+
+```
+apps/server/                        # servicio de actas (@preconteo/server, puerto ACTAS_PORT=3001)
+  src/modules/actas/
+    lua/apply_acta.lua              # operación atómica: idempotencia → versión → 4 niveles → eventos
+    actas.service.ts  .routes.ts    # POST /api/actas, PUT …/photo, GET /api/actas/mine, POST /api/actas/resolutions
+    persistence.worker.ts           # consumer group `persist` sobre ev:actas → Supabase
+  test/                             # garantías RF-1/2/3/10 + contrato con casoVerificacionSchema
+apps/jurado/                        # PWA del jurado (Vite + React): outbox en IndexedDB, base /jurado/
+apps/web/src/server/modules/actas/  # moduloActas: registra actasService → POST /api/actas/resolutions
+packages/contracts/                 # contratos TS de actas + catalog.json (generado por el seed)
+scripts/                            # seed.ts (catálogo + jurados), fake-acta.ts, dev-token.ts
+supabase/migrations/010_catalog_and_actas.sql
+```
+
+```bash
+pnpm seed                         # catálogo en Redis y Supabase + jurado0001…jurado6400
+pnpm dev:actas                    # servicio de actas en :3001 (junto a `pnpm dev` en :3000)
+pnpm dev:jurado                   # PWA en http://localhost:5173/jurado/ (proxy igual que nginx)
+pnpm fake-acta --table 42         # acta de prueba (--kind doubtful | correction, --repeat 5)
+```
+
+Detalle del módulo: [`apps/server/src/modules/actas/README.md`](apps/server/src/modules/actas/README.md).
+
 ## Integración con los demás
 
-- **Jose**: registra su servicio con `contenedor.registrar('actasService', servicio)`; el puerto perezoso lo usa automáticamente en lugar del stub. Para el estado de Redis en la ingesta: `plataforma.redis.disponible()` / `redis.ejecutar(...)` lanzan `RedisNoDisponibleError` → 503 `NO_REGISTRADA`.
+- **Jose**: `moduloActas` registra `actasService` (`RemoteActasService`): traduce la decisión (`APROBAR` → `APPROVE`…) y la envía a `ACTAS_URL/api/actas/resolutions`, donde la aplica el mismo Lua. Si el servicio de actas no responde, lanza error y la verificación compensa y reencola el caso. Las actas dudosas llegan a `verif:case:{acta}` con `casoVerificacionSchema` y se anuncian con `caso_nuevo`; una resolución con `fencing` no mayor al último aplicado se rechaza (`STALE_FENCING`).
 - **Evelyn**: `router.http('/api/publico/stream', …)` con `SseConnection` (tiene `bufferedBytes()`, `onDrain`, `close(motivo)`); `redis.crearConexionBloqueante()` para `XREAD BLOCK`; `metrics.inc/observe/gauge`. El tablero `/ops` consume `GET /api/ops/stream` (eventos `metricas` y `estado`).
 
 ## Despliegue

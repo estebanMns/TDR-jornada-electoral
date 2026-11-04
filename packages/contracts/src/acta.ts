@@ -96,7 +96,15 @@ export interface ResolutionInput {
   reason?: string;
 }
 
-export const RESOLUTION_RESULTS = ['RESOLVED', 'OBSOLETE', 'NOT_UNDER_REVIEW'] as const;
+export const RESOLUTION_RESULTS = [
+  'RESOLVED',
+  /** A newer version of the acta arrived: the decision is about an old one. */
+  'OBSOLETE',
+  /** The version is not waiting for review (already decided, or it was valid). */
+  'NOT_UNDER_REVIEW',
+  /** The fencing token is not newer than the last applied decision (late auditor). */
+  'STALE_FENCING',
+] as const;
 export type ResolutionResult = (typeof RESOLUTION_RESULTS)[number];
 
 export interface ResolutionReceipt {
