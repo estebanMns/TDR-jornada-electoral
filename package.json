@@ -1,0 +1,23 @@
+{
+  "name": "electoral",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "dev:server": "pnpm --filter @electoral/server dev",
+    "dev:web": "pnpm --filter @electoral/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "seed": "tsx scripts/seed.ts",
+    "fake-acta": "tsx scripts/fake-acta.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
