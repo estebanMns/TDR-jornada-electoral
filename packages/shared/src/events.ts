@@ -59,5 +59,5 @@ export function parseAccumulatedEvent(id: string, fields: Record<string, string>
 }
 
 /** Kinds of `ev:actas` entries consumed by the persistence worker. */
-export const PERSISTENCE_EVENT_KINDS = ['VERSION', 'RESOLUTION'] as const;
+export const PERSISTENCE_EVENT_KINDS = ['VERSION', 'STATUS', 'RESOLUTION', 'PHOTO'] as const;
 export type PersistenceEventKind = (typeof PERSISTENCE_EVENT_KINDS)[number];
