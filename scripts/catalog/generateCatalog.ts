@@ -5,7 +5,7 @@ import {
   type CatalogStation,
   type CatalogTable,
   type CatalogVoteOption,
-} from '@electoral/shared';
+} from '@preconteo/contracts';
 import { createRandom, type Random } from './random';
 
 export interface CatalogSize {

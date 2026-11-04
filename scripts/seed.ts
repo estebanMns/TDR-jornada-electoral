@@ -4,8 +4,9 @@
  *   pnpm seed                  # catalog.json + Redis + Supabase (when configured)
  *   pnpm seed --no-redis       # skip Redis
  *   pnpm seed --no-supabase    # skip Supabase
+ *   pnpm seed --no-file        # keep catalog.json as is (e.g. inside the deployed image)
  *
- * Env: REDIS_URL, SUPABASE_URL, SUPABASE_SERVICE_KEY, SEED_JUROR_PASSWORD.
+ * Env: REDIS_URL, REDIS_PASSWORD, SUPABASE_URL, SUPABASE_SERVICE_KEY, SEED_JUROR_PASSWORD.
  */
 import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -15,7 +16,7 @@ import { DEFAULT_SEED, generateCatalog } from './catalog/generateCatalog';
 import { loadCatalogIntoRedis } from './catalog/loadRedis';
 import { loadCatalogIntoSupabase, loadJurorUsers } from './catalog/loadSupabase';
 
-const CATALOG_PATH = fileURLToPath(new URL('../packages/shared/catalog.json', import.meta.url));
+const CATALOG_PATH = fileURLToPath(new URL('../packages/contracts/catalog.json', import.meta.url));
 
 async function main(): Promise<void> {
   const args = new Set(process.argv.slice(2));
@@ -25,11 +26,14 @@ async function main(): Promise<void> {
       `${catalog.stations.length} stations, ${catalog.tables.length} tables`,
   );
 
-  await writeFile(CATALOG_PATH, `${JSON.stringify(catalog)}\n`);
-  console.info(`✔ ${CATALOG_PATH}`);
+  if (!args.has('--no-file')) {
+    await writeFile(CATALOG_PATH, `${JSON.stringify(catalog)}\n`);
+    console.info(`✔ ${CATALOG_PATH}`);
+  }
 
   if (!args.has('--no-redis')) {
     const redis = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
+      password: process.env.REDIS_PASSWORD || undefined,
       maxRetriesPerRequest: 1,
     });
     try {
@@ -57,7 +61,7 @@ async function main(): Promise<void> {
     return;
   }
   await loadJurorUsers(supabase, catalog, password);
-  console.info(`✔ ${catalog.tables.length} juror users upserted (juror-0001 … juror-${catalog.tables.length})`);
+  console.info(`✔ ${catalog.tables.length} juror users upserted in usuarios (jurado0001 … jurado${catalog.tables.length})`);
 }
 
 main().catch((error: unknown) => {

@@ -1,5 +1,5 @@
 /**
- * Bootstrap core (platform owner: Meneses). Supabase is optional in local
+ * Core of the actas service. Supabase is optional in local
  * development: ingestion never depends on it (GENERAL §2).
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';

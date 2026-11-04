@@ -1,15 +1,17 @@
 import type { Redis } from 'ioredis';
-import { redisKeys, type Catalog } from '@electoral/shared';
+import { redisKeys, type Catalog } from '@preconteo/contracts';
 
 const PIPELINE_CHUNK = 1_000;
 
 /**
  * Loads the catalog lookups used on the hot path:
- * - `cat:table:{id}` HASH: station, mun, enabled, actaId
+ * - `cat:table:{id}` HASH: station, mun, enabled, actaId, stationName, munName
  * - `cat:n:station:{id}`, `cat:n:mun:{id}`, `cat:n:dep`: number of tables (for % reported)
  */
 export async function loadCatalogIntoRedis(redis: Redis, catalog: Catalog): Promise<void> {
   const municipalityByStation = new Map(catalog.stations.map((s) => [s.id, s.municipalityId]));
+  const stationNames = new Map(catalog.stations.map((s) => [s.id, s.name]));
+  const municipalityNames = new Map(catalog.municipalities.map((m) => [m.id, m.name]));
   const tablesPerStation = new Map<number, number>();
   const tablesPerMunicipality = new Map<number, number>();
 
@@ -23,6 +25,9 @@ export async function loadCatalogIntoRedis(redis: Redis, catalog: Catalog): Prom
         mun: municipalityId,
         enabled: table.enabled,
         actaId: table.actaId,
+        // Names travel in the review cases shown to auditors.
+        stationName: stationNames.get(table.stationId) ?? '',
+        munName: municipalityNames.get(municipalityId) ?? '',
       });
       tablesPerStation.set(table.stationId, (tablesPerStation.get(table.stationId) ?? 0) + 1);
       tablesPerMunicipality.set(municipalityId, (tablesPerMunicipality.get(municipalityId) ?? 0) + 1);

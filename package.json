@@ -1,5 +1,5 @@
 {
-  "name": "electoral",
+  "name": "preconteo",
   "private": true,
   "type": "module",
   "engines": {
@@ -7,30 +7,36 @@
     "pnpm": ">=10"
   },
   "scripts": {
-    "dev": "pnpm --filter @electoral/web dev",
-    "dev:server": "pnpm --filter @electoral/server dev",
-    "dev:web": "pnpm --filter @electoral/web dev",
-    "build": "pnpm -r build",
-    "typecheck": "tsc -p scripts && pnpm -r typecheck",
-    "test": "pnpm -r test",
-    "seed": "tsx scripts/seed.ts",
-    "fake-acta": "tsx scripts/fake-acta.ts",
-    "dev-token": "tsx scripts/dev-token.ts",
-    "fake-events": "tsx scripts/fake-events.ts",
-    "load:publico": "pnpm --filter @electoral/loadtest publico",
-    "load:jornada": "pnpm --filter @electoral/loadtest jornada",
-    "load:lento": "pnpm --filter @electoral/loadtest lento",
-    "load:avalancha": "pnpm --filter @electoral/loadtest avalancha"
+    "dev": "pnpm --filter @preconteo/web dev",
+    "dev:actas": "pnpm --filter @preconteo/server dev",
+    "dev:jurado": "pnpm --filter @preconteo/jurado dev",
+    "build": "pnpm -r --if-present build",
+    "start": "pnpm --filter @preconteo/web start",
+    "start:actas": "pnpm --filter @preconteo/server start",
+    "test": "pnpm -r --workspace-concurrency=1 --if-present test",
+    "typecheck": "tsc -p scripts && pnpm -r --if-present typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "seed": "tsx --env-file-if-exists=.env scripts/seed.ts",
+    "fake-acta": "tsx --env-file-if-exists=.env scripts/fake-acta.ts",
+    "dev-token": "tsx --env-file-if-exists=.env scripts/dev-token.ts",
+    "fake:dudosas": "pnpm --filter @preconteo/web fake:dudosas",
+    "smoke": "pnpm --filter @preconteo/web smoke"
   },
   "devDependencies": {
-    "@electoral/shared": "workspace:*",
+    "@eslint/js": "^9.39.0",
+    "@preconteo/contracts": "workspace:*",
     "@supabase/supabase-js": "^2.118.0",
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "^22.10.0",
     "bcryptjs": "^3.0.3",
+    "eslint": "^9.39.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^16.5.0",
     "ioredis": "^5.11.1",
+    "prettier": "^3.6.2",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
-  },
-  "packageManager": "pnpm@10.28.0+sha512.05df71d1421f21399e053fde567cea34d446fa02c76571441bfc1c7956e98e363088982d940465fd34480d4d90a0668bc12362f8aa88000a64e83d0b0e47be48"
+  }
 }

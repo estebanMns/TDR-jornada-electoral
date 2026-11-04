@@ -4,7 +4,8 @@
  */
 import type { Redis } from 'ioredis';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { redisKeys, type ActaSubmission, type JwtPayload } from '@electoral/shared';
+import { redisKeys, type ActaSubmission, type JwtPayload } from '@preconteo/contracts';
+import { casoVerificacionSchema, scoreDeCaso } from '@preconteo/shared/schemas/verificacion';
 import { createRandom } from '../../../scripts/catalog/random';
 import type { ActasService } from '../src/modules/actas/actas.service';
 import {
@@ -163,7 +164,47 @@ describe('RF-2 convergence', () => {
 
     expect(receipt.result).toBe('CONFLICT');
     expect(await readTotals(redis, redisKeys.totalsDepartment())).toEqual({});
-    expect(await redis.hget(redisKeys.verificationCase(firstTable.actaId), 'reason')).toBe('CONTENT_CONFLICT');
+    const raw = await redis.get(redisKeys.verificationCase(firstTable.actaId));
+    expect(JSON.parse(raw!)).toMatchObject({ motivo: 'CONFLICTO', prioridad: 1, votosEnConflicto: other.votes });
+  });
+});
+
+describe('Contract with the verification module', () => {
+  it('writes review cases that the platform schema accepts, scored with scoreDeCaso', async () => {
+    const juror = jurorFor(firstTable);
+    const doubtful = buildSubmission(firstTable, { doubtful: true });
+    await service.submit({ submission: doubtful, idempotencyKey: newIdempotencyKey(), juror });
+
+    const raw = await redis.get(redisKeys.verificationCase(firstTable.actaId));
+    const parsed = casoVerificacionSchema.safeParse(JSON.parse(raw!));
+    expect(parsed.success, JSON.stringify(parsed.error?.issues)).toBe(true);
+    const station = TEST_CATALOG.stations.find((s) => s.id === firstTable.stationId)!;
+    expect(parsed.data).toMatchObject({
+      acta: firstTable.actaId,
+      motivo: 'DESCUADRE',
+      mesa: firstTable.id,
+      puesto: { id: station.id, nombre: station.name },
+      sufragantes: doubtful.voters,
+      habilitados: firstTable.enabled,
+    });
+    const score = await redis.zscore(redisKeys.verificationQueue(), firstTable.actaId);
+    expect(Number(score)).toBe(scoreDeCaso(parsed.data!));
+  });
+
+  it('removes the pending case when a newer valid version arrives', async () => {
+    const juror = jurorFor(firstTable);
+    await service.submit({
+      submission: buildSubmission(firstTable, { doubtful: true }),
+      idempotencyKey: newIdempotencyKey(),
+      juror,
+    });
+    await service.submit({
+      submission: buildSubmission(firstTable, { version: 2 }),
+      idempotencyKey: newIdempotencyKey(),
+      juror,
+    });
+    expect(await redis.get(redisKeys.verificationCase(firstTable.actaId))).toBeNull();
+    expect(await redis.zscore(redisKeys.verificationQueue(), firstTable.actaId)).toBeNull();
   });
 });
 
@@ -215,7 +256,6 @@ describe('Auditor resolution', () => {
     const department = await readTotals(redis, redisKeys.totalsDepartment());
     expect(department._reported).toBe(1);
     expect(department._voters).toBe(doubtful.voters - 1);
-    expect(await redis.zscore(redisKeys.verificationQueue(), firstTable.actaId)).toBeNull();
 
     const again = await service.applyResolution({
       actaId: firstTable.actaId,
@@ -225,6 +265,32 @@ describe('Auditor resolution', () => {
       fencing: 2,
     });
     expect(again.result).toBe('NOT_UNDER_REVIEW');
+  });
+
+  it('rejects a decision whose fencing token is not newer than the last applied one', async () => {
+    const juror = jurorFor(firstTable);
+    await service.submit({
+      submission: buildSubmission(firstTable, { doubtful: true }),
+      idempotencyKey: newIdempotencyKey(),
+      juror,
+    });
+    await service.applyResolution({ actaId: firstTable.actaId, version: 1, decision: 'REJECT', auditor: 'b', fencing: 9 });
+
+    // The juror retransmits a corrected version, which is doubtful again.
+    await service.submit({
+      submission: buildSubmission(firstTable, { version: 2, doubtful: true, random: createRandom(3) }),
+      idempotencyKey: newIdempotencyKey(),
+      juror,
+    });
+    const late = await service.applyResolution({
+      actaId: firstTable.actaId,
+      version: 2,
+      decision: 'APPROVE',
+      auditor: 'a',
+      fencing: 8,
+    });
+    expect(late.result).toBe('STALE_FENCING');
+    expect(await readTotals(redis, redisKeys.totalsDepartment())).toEqual({});
   });
 });
 

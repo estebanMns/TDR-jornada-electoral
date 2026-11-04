@@ -1,5 +1,5 @@
 /**
- * Bootstrap core (platform owner: Meneses). Same interface as GENERAL §7.5:
+ * Core of the actas service. Same interface as GENERAL §7.5:
  * `inc`, `observe`, `gauge`. This in-memory version only keeps local values.
  */
 export interface Metrics {
