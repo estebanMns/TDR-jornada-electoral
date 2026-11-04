@@ -51,6 +51,8 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       credential: (request) => `juror:${request.user.sub}`,
     }),
     localPhotoDirectory: config.PHOTO_DIR,
+    createBlockingRedis: deps.createBlockingRedis,
+    startWorkers: deps.startWorkers ?? false,
   });
 
   return app;
