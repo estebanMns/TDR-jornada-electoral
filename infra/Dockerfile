@@ -3,18 +3,23 @@
 
 FROM node:22-alpine AS base
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH NEXT_TELEMETRY_DISABLED=1
-RUN corepack enable
+# pnpm fijo para builds reproducibles (el lockfile es v9).
+RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
 WORKDIR /repo
 
 # --- Manifiestos (capa cacheable) ---
 FROM base AS manifiestos
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Todos los paquetes del workspace: --frozen-lockfile exige sus manifiestos.
 COPY apps/web/package.json apps/web/
+COPY apps/server/package.json apps/server/
+COPY apps/jurado/package.json apps/jurado/
 COPY packages/shared/package.json packages/shared/
+COPY packages/contracts/package.json packages/contracts/
 
 # --- Dependencias completas para compilar ---
 FROM manifiestos AS deps
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --filter @preconteo/web...
 
 # --- Build de Next ---
 FROM deps AS build
@@ -24,7 +29,7 @@ RUN pnpm --filter @preconteo/web build
 
 # --- Solo dependencias de producción ---
 FROM manifiestos AS deps-prod
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --prod
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile --prod --filter @preconteo/web...
 
 # --- Imagen final ---
 FROM node:22-alpine AS runtime

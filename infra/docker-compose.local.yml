@@ -4,28 +4,50 @@
 
 name: preconteo-local
 
+# Built ONCE by app1 (several services building the same tag in parallel collide).
+x-app-build: &app-build
+  context: ..
+  dockerfile: infra/Dockerfile
+
 x-app: &app
-  build:
-    context: ..
-    dockerfile: infra/Dockerfile
+  pull_policy: never # reuse the image built by app1
   image: preconteo-app:local
   env_file: ../.env
   depends_on:
     redis:
       condition: service_healthy
 
+# Built ONCE by actas1 (several services building the same tag in parallel collide).
+x-actas-build: &actas-build
+  context: ..
+  dockerfile: infra/Dockerfile.actas
+
+x-actas: &actas
+  pull_policy: never # reuse the image built by actas1
+  image: preconteo-actas:local
+  env_file: ../.env
+  depends_on:
+    redis:
+      condition: service_healthy
+
 services:
-  app1: { <<: *app, environment: { INSTANCE_ID: app1, REDIS_URL: 'redis://redis:6379', REDIS_PASSWORD: '' } }
-  app2: { <<: *app, environment: { INSTANCE_ID: app2, REDIS_URL: 'redis://redis:6379', REDIS_PASSWORD: '' } }
+  app1: { <<: *app, build: *app-build, pull_policy: build, environment: { INSTANCE_ID: app1, ACTAS_URL: 'http://actas1:3001', REDIS_URL: 'redis://redis:6379', REDIS_PASSWORD: '' } }
+  app2: { <<: *app, environment: { INSTANCE_ID: app2, ACTAS_URL: 'http://actas2:3001', REDIS_URL: 'redis://redis:6379', REDIS_PASSWORD: '' } }
+
+  actas1: { <<: *actas, build: *actas-build, pull_policy: build, environment: { INSTANCE_ID: actas1, REDIS_URL: 'redis://redis:6379', REDIS_PASSWORD: '' } }
+  actas2: { <<: *actas, environment: { INSTANCE_ID: actas2, REDIS_URL: 'redis://redis:6379', REDIS_PASSWORD: '' } }
 
   nginx:
-    image: nginx:1.27-alpine
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.nginx
+    image: preconteo-nginx:local
     ports: ['8080:80']
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/snippets:/etc/nginx/snippets:ro
       - ./nginx/templates/local:/etc/nginx/templates:ro
-    depends_on: [app1, app2]
+    depends_on: [app1, app2, actas1, actas2]
 
   redis:
     image: redis:7-alpine

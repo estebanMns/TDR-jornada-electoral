@@ -4,8 +4,9 @@
  *   pnpm seed                  # catalog.json + Redis + Supabase (when configured)
  *   pnpm seed --no-redis       # skip Redis
  *   pnpm seed --no-supabase    # skip Supabase
+ *   pnpm seed --no-file        # keep catalog.json as is (e.g. inside the deployed image)
  *
- * Env: REDIS_URL, SUPABASE_URL, SUPABASE_SERVICE_KEY, SEED_JUROR_PASSWORD.
+ * Env: REDIS_URL, REDIS_PASSWORD, SUPABASE_URL, SUPABASE_SERVICE_KEY, SEED_JUROR_PASSWORD.
  */
 import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -25,11 +26,14 @@ async function main(): Promise<void> {
       `${catalog.stations.length} stations, ${catalog.tables.length} tables`,
   );
 
-  await writeFile(CATALOG_PATH, `${JSON.stringify(catalog)}\n`);
-  console.info(`✔ ${CATALOG_PATH}`);
+  if (!args.has('--no-file')) {
+    await writeFile(CATALOG_PATH, `${JSON.stringify(catalog)}\n`);
+    console.info(`✔ ${CATALOG_PATH}`);
+  }
 
   if (!args.has('--no-redis')) {
     const redis = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', {
+      password: process.env.REDIS_PASSWORD || undefined,
       maxRetriesPerRequest: 1,
     });
     try {

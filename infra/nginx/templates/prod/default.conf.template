@@ -13,6 +13,19 @@ upstream preconteo {
   keepalive 512;
 }
 
+# Servicio de actas (Jose): una instancia por cada app, misma política sin afinidad.
+upstream actas {
+  server actas1:3001 max_fails=2 fail_timeout=5s;
+  server actas2:3001 max_fails=2 fail_timeout=5s;
+  server actas3:3001 max_fails=2 fail_timeout=5s;
+  server actas4:3001 max_fails=2 fail_timeout=5s;
+  server actas5:3001 max_fails=2 fail_timeout=5s;
+  server actas6:3001 max_fails=2 fail_timeout=5s;
+  server actas7:3001 max_fails=2 fail_timeout=5s;
+  server actas8:3001 max_fails=2 fail_timeout=5s;
+  keepalive 128;
+}
+
 server {
   listen 80;
   server_name ${DOMINIO};

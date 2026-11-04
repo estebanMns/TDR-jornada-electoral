@@ -1,13 +1,17 @@
 # Producción: nginx + app1…app8 + Redis en una VM (GENERAL §13, RT-1, RT-10).
 #   docker compose -f infra/docker-compose.yml up -d --build
+# Servicios: nginx (con la PWA del jurado) + app1…app8 + actas1…actas8 + Redis.
 # Variables: ../.env (ver .env.example). Redis y las apps NO publican puertos.
 
 name: preconteo
 
+# Built ONCE by app1 (several services building the same tag in parallel collide).
+x-app-build: &app-build
+  context: ..
+  dockerfile: infra/Dockerfile
+
 x-app: &app
-  build:
-    context: ..
-    dockerfile: infra/Dockerfile
+  pull_policy: never # reuse the image built by app1
   image: preconteo-app:latest
   env_file: ../.env
   restart: unless-stopped
@@ -24,18 +28,51 @@ x-app: &app
     start_period: 20s
   stop_grace_period: 15s # apagado ordenado: SSE → reconectar, WS → 1012
 
+# Built ONCE by actas1 (several services building the same tag in parallel collide).
+x-actas-build: &actas-build
+  context: ..
+  dockerfile: infra/Dockerfile.actas
+
+x-actas: &actas
+  pull_policy: never # reuse the image built by actas1
+  image: preconteo-actas:latest
+  env_file: ../.env
+  restart: unless-stopped
+  depends_on:
+    redis:
+      condition: service_healthy
+  healthcheck:
+    test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:3001/api/health']
+    interval: 10s
+    timeout: 3s
+    retries: 3
+    start_period: 20s
+
 services:
-  app1: { <<: *app, environment: { INSTANCE_ID: app1, NODE_OPTIONS: --max-old-space-size=1024 } }
-  app2: { <<: *app, environment: { INSTANCE_ID: app2, NODE_OPTIONS: --max-old-space-size=1024 } }
-  app3: { <<: *app, environment: { INSTANCE_ID: app3, NODE_OPTIONS: --max-old-space-size=1024 } }
-  app4: { <<: *app, environment: { INSTANCE_ID: app4, NODE_OPTIONS: --max-old-space-size=1024 } }
-  app5: { <<: *app, environment: { INSTANCE_ID: app5, NODE_OPTIONS: --max-old-space-size=1024 } }
-  app6: { <<: *app, environment: { INSTANCE_ID: app6, NODE_OPTIONS: --max-old-space-size=1024 } }
-  app7: { <<: *app, environment: { INSTANCE_ID: app7, NODE_OPTIONS: --max-old-space-size=1024 } }
-  app8: { <<: *app, environment: { INSTANCE_ID: app8, NODE_OPTIONS: --max-old-space-size=1024 } }
+  app1: { <<: *app, build: *app-build, pull_policy: build, environment: { INSTANCE_ID: app1, ACTAS_URL: 'http://actas1:3001', NODE_OPTIONS: --max-old-space-size=1024 } }
+  app2: { <<: *app, environment: { INSTANCE_ID: app2, ACTAS_URL: 'http://actas2:3001', NODE_OPTIONS: --max-old-space-size=1024 } }
+  app3: { <<: *app, environment: { INSTANCE_ID: app3, ACTAS_URL: 'http://actas3:3001', NODE_OPTIONS: --max-old-space-size=1024 } }
+  app4: { <<: *app, environment: { INSTANCE_ID: app4, ACTAS_URL: 'http://actas4:3001', NODE_OPTIONS: --max-old-space-size=1024 } }
+  app5: { <<: *app, environment: { INSTANCE_ID: app5, ACTAS_URL: 'http://actas5:3001', NODE_OPTIONS: --max-old-space-size=1024 } }
+  app6: { <<: *app, environment: { INSTANCE_ID: app6, ACTAS_URL: 'http://actas6:3001', NODE_OPTIONS: --max-old-space-size=1024 } }
+  app7: { <<: *app, environment: { INSTANCE_ID: app7, ACTAS_URL: 'http://actas7:3001', NODE_OPTIONS: --max-old-space-size=1024 } }
+  app8: { <<: *app, environment: { INSTANCE_ID: app8, ACTAS_URL: 'http://actas8:3001', NODE_OPTIONS: --max-old-space-size=1024 } }
+
+  # Servicio de actas (Jose): recibe /api/actas; la verificación le reenvía las decisiones.
+  actas1: { <<: *actas, build: *actas-build, pull_policy: build, environment: { INSTANCE_ID: actas1, NODE_OPTIONS: --max-old-space-size=256 } }
+  actas2: { <<: *actas, environment: { INSTANCE_ID: actas2, NODE_OPTIONS: --max-old-space-size=256 } }
+  actas3: { <<: *actas, environment: { INSTANCE_ID: actas3, NODE_OPTIONS: --max-old-space-size=256 } }
+  actas4: { <<: *actas, environment: { INSTANCE_ID: actas4, NODE_OPTIONS: --max-old-space-size=256 } }
+  actas5: { <<: *actas, environment: { INSTANCE_ID: actas5, NODE_OPTIONS: --max-old-space-size=256 } }
+  actas6: { <<: *actas, environment: { INSTANCE_ID: actas6, NODE_OPTIONS: --max-old-space-size=256 } }
+  actas7: { <<: *actas, environment: { INSTANCE_ID: actas7, NODE_OPTIONS: --max-old-space-size=256 } }
+  actas8: { <<: *actas, environment: { INSTANCE_ID: actas8, NODE_OPTIONS: --max-old-space-size=256 } }
 
   nginx:
-    image: nginx:1.27-alpine
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.nginx
+    image: preconteo-nginx:latest
     restart: unless-stopped
     env_file: ../.env # DOMINIO para la plantilla
     ports: ['80:80', '443:443']
@@ -46,7 +83,7 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt:ro
     ulimits:
       nofile: { soft: 200000, hard: 200000 }
-    depends_on: [app1, app2, app3, app4, app5, app6, app7, app8]
+    depends_on: [app1, app2, app3, app4, app5, app6, app7, app8, actas1, actas2, actas3, actas4, actas5, actas6, actas7, actas8]
 
   redis:
     image: redis:7-alpine

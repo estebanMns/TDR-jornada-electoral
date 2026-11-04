@@ -6,6 +6,12 @@ upstream preconteo {
   keepalive 64;
 }
 
+upstream actas {
+  server actas1:3001;
+  server actas2:3001;
+  keepalive 16;
+}
+
 server {
   listen 80;
   include /etc/nginx/snippets/rutas.conf;

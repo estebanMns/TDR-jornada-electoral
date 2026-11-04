@@ -1,6 +1,14 @@
 # Despliegue (RT-1, RT-10)
 
-Una VM con Docker Compose: `nginx` + `app1…app8` + `redis`. Supabase va en su nube.
+Una VM con Docker Compose: `nginx` (con la PWA del jurado) + `app1…app8` (plataforma Next.js) + `actas1…actas8` (servicio de actas) + `redis`. Supabase va en su nube.
+
+| Ruta | Va a | Imagen |
+|---|---|---|
+| `/api/actas…` | `actas1…actas8` (upstream `actas`, sin afinidad) | `infra/Dockerfile.actas` |
+| `/jurado/` | archivos estáticos dentro de nginx | `infra/Dockerfile.nginx` |
+| todo lo demás (`/login`, `/verificacion`, `/api/…`, `/ws/`) | `app1…app8` (upstream `preconteo`) | `infra/Dockerfile` |
+
+Cada `appN` reenvía las decisiones de auditoría a su `actasN` (`ACTAS_URL`, ya puesto en el compose).
 La prueba de carga corre **desde otra máquina**.
 
 ## Decisiones
@@ -19,9 +27,8 @@ La prueba de carga corre **desde otra máquina**.
 ## 1. Supabase (una vez)
 
 1. Crear el proyecto y guardar `Project URL` y la clave **service_role** (solo en `.env` del servidor; nunca en el repo ni en el frontend).
-2. Ejecutar las migraciones en orden (`001_*`, `010_*`, `020_*`) en el SQL Editor o con `supabase db push`.
-3. Crear el bucket **privado** `actas-fotos`.
-4. Correr el seed de Jose (`pnpm seed`) apuntando a Supabase y al Redis del servidor.
+2. Ejecutar las migraciones en orden (`001_*`, `010_*`, `020_*`) en el SQL Editor o con `supabase db push`. La `010` crea el bucket **privado** `actas-fotos`.
+3. El seed (catálogo + 6.400 jurados) se corre **después de levantar** el compose, ver §6: necesita el Redis de la VM, que no expone puertos.
 
 ## 2. VM
 
@@ -47,7 +54,7 @@ git clone <url-del-repo> preconteo && cd preconteo
 cp .env.example .env
 ```
 
-Mínimo en `.env`: `JWT_SECRET` (`openssl rand -hex 32`), `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `REDIS_URL=redis://redis:6379`, `REDIS_PASSWORD` (aleatorio), `WINDOW_MS=2000`, `DOMINIO=preconteo-xxx.duckdns.org`, `PUBLIC_URL=https://preconteo-xxx.duckdns.org`, `NODE_ENV=production`.
+Mínimo en `.env`: `JWT_SECRET` (`openssl rand -hex 32`; **mínimo 32 caracteres**, lo comparten la plataforma y el servicio de actas), `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `REDIS_URL=redis://redis:6379`, `REDIS_PASSWORD` (aleatorio), `WINDOW_MS=2000`, `DOMINIO=preconteo-xxx.duckdns.org`, `PUBLIC_URL=https://preconteo-xxx.duckdns.org`, `NODE_ENV=production`, `SEED_JUROR_PASSWORD` (contraseña de prueba de los jurados).
 Redis arranca con `--requirepass` y sin `ports:` (solo red interna de Docker).
 
 ## 5. HTTPS
@@ -70,11 +77,14 @@ Renovación semanal (cron de root):
 
 ```bash
 docker compose -f infra/docker-compose.yml up -d --build
-docker compose -f infra/docker-compose.yml ps        # 8 apps + redis "healthy", nginx "running"
+docker compose -f infra/docker-compose.yml ps        # 8 apps + 8 actas + redis "healthy", nginx "running"
+
+# Una vez (y cada vez que se reinicie Redis desde cero): catálogo en Redis y Supabase + jurados
+docker compose -f infra/docker-compose.yml exec actas1 sh -c 'cd /repo && node --import tsx scripts/seed.ts --no-file'
 ```
 
 - Todo con `restart: unless-stopped` → si la VM reinicia, vuelve solo (RT-10).
-- Cada `appN` tiene `healthcheck` a `/api/health` (503 si Redis no responde).
+- Cada `appN` y `actasN` tiene `healthcheck` a `/api/health` (503 si Redis no responde).
 - `stop_grace_period: 15s` → apagado ordenado: SSE recibe `event: reconectar`, WS se cierra con 1012.
 - Actualizar: `./infra/deploy.sh`.
 
@@ -82,7 +92,8 @@ docker compose -f infra/docker-compose.yml ps        # 8 apps + redis "healthy",
 
 - [ ] `https://<dominio>/resultados` abre desde un celular con datos móviles.
 - [ ] Reparto sin afinidad: `./infra/demo-instancias.sh https://<dominio> 16` → aparecen `app1…app8`.
-- [ ] Login de jurado, envío de un acta y su aparición en `/resultados`.
+- [ ] Login de jurado (`jurado0001`…, contraseña `SEED_JUROR_PASSWORD`) → `/jurado/`, envío de un acta y su aparición en `/resultados`.
+- [ ] Un acta dudosa aparece en `/verificacion`; al aprobarla, el acumulado cambia.
 - [ ] Dos auditores en navegadores distintos se ven en vivo (o `pnpm smoke` con `URL_A=URL_B=https://<dominio>`).
 - [ ] `/ops` muestra las 8 instancias.
 - [ ] `docker stop preconteo-app3-1` → el sistema sigue y `/ops` lo refleja; `docker start` lo devuelve.
