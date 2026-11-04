@@ -21,6 +21,9 @@ const esquema = z.object({
   SUPABASE_BUCKET_FOTOS: z.string().default('actas-fotos'),
 
   WINDOW_MS: z.coerce.number().int().positive().default(2000),
+
+  // Actas service (Jose): auditor decisions are forwarded there.
+  ACTAS_URL: z.string().url().default('http://localhost:3001'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 });
 
@@ -34,6 +37,7 @@ const esquema = z.object({
  *   redis: { url: string, password?: string },
  *   supabase: { url: string, claveServicio: string, bucketFotos: string },
  *   difusion: { ventanaMs: number },
+ *   actas: { url: string },
  *   logNivel: string,
  * }>} Config
  */
@@ -64,6 +68,7 @@ export function cargarConfig(env = process.env) {
       bucketFotos: e.SUPABASE_BUCKET_FOTOS,
     }),
     difusion: Object.freeze({ ventanaMs: e.WINDOW_MS }),
+    actas: Object.freeze({ url: e.ACTAS_URL }),
     logNivel: e.LOG_LEVEL,
   });
 }

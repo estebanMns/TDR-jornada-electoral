@@ -2,6 +2,7 @@ import { Plataforma } from './core/Plataforma.js';
 import { publicarContenedor } from './contenedorGlobal.js';
 import { moduloVerificacion } from './modules/verificacion/index.js';
 import { moduloOps } from './modules/ops/index.js';
+import { moduloActas } from './modules/actas/index.js';
 
 /**
  * Módulos de negocio: UNA línea por módulo (cada dueño agrega la suya).
@@ -10,7 +11,7 @@ import { moduloOps } from './modules/ops/index.js';
 const MODULOS = [
   moduloVerificacion, // Meneses
   moduloOps, // Meneses
-  // moduloActas,     // Jose
+  moduloActas, // Jose
   // moduloPublico,   // Evelyn
 ];
 
