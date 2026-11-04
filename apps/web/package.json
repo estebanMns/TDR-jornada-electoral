@@ -1,36 +1,9 @@
 {
-  "name": "@preconteo/web",
   "name": "@electoral/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --env-file-if-exists=../../.env server.js",
-    "build": "next build",
-    "start": "NODE_ENV=production node server.js",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "fake:dudosas": "node --env-file-if-exists=../../.env scripts/fake-dudosas.js",
-    "smoke": "node --env-file-if-exists=../../.env scripts/smoke-dos-instancias.js"
-  },
-  "dependencies": {
-    "@preconteo/shared": "workspace:*",
-    "@supabase/supabase-js": "^2.79.0",
-    "bcryptjs": "^3.0.2",
-    "ioredis": "^5.8.2",
-    "jose": "^6.1.0",
-    "next": "^16.4.5",
-    "pino": "^10.1.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "server-only": "^0.0.1",
-    "ws": "^8.18.3",
-    "zod": "^4.1.12"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.16",
-    "tailwindcss": "^4.1.16",
-    "vitest": "^4.0.6"
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",

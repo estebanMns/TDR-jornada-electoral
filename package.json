@@ -1,29 +1,4 @@
 {
-  "name": "preconteo",
-  "private": true,
-  "type": "module",
-  "packageManager": "pnpm@10.28.0",
-  "engines": {
-    "node": ">=22"
-  },
-  "scripts": {
-    "dev": "pnpm --filter @preconteo/web dev",
-    "build": "pnpm --filter @preconteo/web build",
-    "start": "pnpm --filter @preconteo/web start",
-    "test": "pnpm -r --if-present test",
-    "lint": "eslint .",
-    "format": "prettier --write .",
-    "seed": "node scripts/seed.js",
-    "fake:dudosas": "pnpm --filter @preconteo/web fake:dudosas",
-    "smoke": "pnpm --filter @preconteo/web smoke"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.39.0",
-    "eslint": "^9.39.0",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "globals": "^16.5.0",
-    "prettier": "^3.6.2"
   "name": "electoral",
   "private": true,
   "type": "module",
