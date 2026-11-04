@@ -1,0 +1,11 @@
+import { spawn } from 'node:child_process';
+import { writeFile } from 'node:fs/promises';
+import { parseArgs } from 'node:util';
+const {values}=parseArgs({options:{clientes:{type:'string',default:'1000'},jitter:{type:'string',default:'on'},salida:{type:'string',default:'avalancha.csv'},url:{type:'string',default:'http://localhost:3000/api/publico/stream'}}});
+if(!['on','off'].includes(values.jitter))throw new Error('--jitter debe ser on u off');
+const start=Date.now(),rows=['elapsed_ms,event,clients,jitter'];
+const child=spawn('pnpm',['exec','tsx','loadtest/publico.ts','--conexiones',values.clientes,'--url',values.url],{stdio:'inherit',env:{...process.env,LOADTEST_JITTER:values.jitter}});
+rows.push(`${Date.now()-start},clients_started,${values.clientes},${values.jitter}`);
+console.log('Cuando los clientes estén conectados, ejecuta: docker stop app3');
+const interval=setInterval(()=>rows.push(`${Date.now()-start},sample,${values.clientes},${values.jitter}`),1000);
+process.on('SIGINT',async()=>{clearInterval(interval);rows.push(`${Date.now()-start},interrupted,${values.clientes},${values.jitter}`);await writeFile(values.salida,rows.join('\n'));child.kill('SIGINT');process.exit(0);});

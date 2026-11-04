@@ -1,0 +1,5 @@
+En apps/web/src/server/app.js:
+1) Agrega junto a los imports:
+   import { moduloPublico } from './modules/publico/index.js';
+2) Agrega dentro de MODULOS:
+   moduloPublico, // Evelyn — público SSE
