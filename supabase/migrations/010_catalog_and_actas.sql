@@ -1,5 +1,6 @@
--- 010 · Catalog, acta version history and audit decisions (owner: actas module).
--- GENERAL §6.2. The `users` table belongs to migration 001 (platform).
+-- 010 · Catalog and acta version history (owner: actas module). GENERAL §6.2.
+-- Run AFTER 001 (platform): `usuarios` and `verificaciones` (auditor decisions)
+-- belong to that migration.
 --
 -- Every table has RLS enabled and NO policies: only the server, using the
 -- service-role key, reads or writes them. Browsers never talk to Postgres.
@@ -62,27 +63,11 @@ create table if not exists public.acta_versions (
 create index if not exists acta_versions_table_idx on public.acta_versions (table_id);
 create index if not exists acta_versions_status_idx on public.acta_versions (status);
 
--- Auditor decisions (RF-7). `fencing` is the monotonic token of the lock.
-create table if not exists public.verifications (
-  id              bigserial   primary key,
-  acta_id         text        not null,
-  version         integer     not null,
-  auditor         text        not null,
-  decision        text        not null check (decision in ('APPROVE', 'APPROVE_WITH_CORRECTION', 'REJECT')),
-  corrected_votes jsonb,
-  reason          text,
-  fencing         bigint      not null,
-  created_at      timestamptz not null default now(),
-  unique (acta_id, version, fencing)
-);
-create index if not exists verifications_acta_idx on public.verifications (acta_id, version);
-
 alter table public.municipalities enable row level security;
 alter table public.stations       enable row level security;
 alter table public.voting_tables  enable row level security;
 alter table public.vote_options   enable row level security;
 alter table public.acta_versions  enable row level security;
-alter table public.verifications  enable row level security;
 
 -- ---------------------------------------------------------------- storage
 

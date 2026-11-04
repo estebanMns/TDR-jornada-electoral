@@ -9,7 +9,7 @@ actas.service.ts      use cases: submit, applyResolution, listJurorActas, storeP
 actas.repository.ts   the only file that knows Redis keys / commands
 actas.rules.ts        doubt rules, review priority, content hash
 lua/apply_acta.lua    the atomic operation (idempotency → version → totals → events)
-history.store.ts      Supabase history (acta_versions, verifications)
+history.store.ts      Supabase history (acta_versions)
 persistence.worker.ts consumer group `persist` on ev:actas
 photo.storage.ts      Supabase Storage / local directory
 ```
@@ -37,7 +37,8 @@ photo.storage.ts      Supabase Storage / local directory
   `case_superseded` (a newer version arrived: the case is obsolete).
   Resolve with `app.actasService.applyResolution({ actaId, version, decision,
   votes?, voters?, auditor, fencing, reason? })` → `RESOLVED | OBSOLETE |
-  NOT_UNDER_REVIEW`. The persistence worker stores the decision in `verifications`.
+  NOT_UNDER_REVIEW`. The worker only updates the status in `acta_versions`; the
+  decision itself goes to `verificaciones` (verification module, migration 001).
 
 ## Running
 

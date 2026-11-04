@@ -76,21 +76,11 @@ export class SupabaseActaHistoryStore implements ActaHistoryStore {
     });
   }
 
+  /**
+   * Only the outcome on the version row. The decision itself (auditor, fencing,
+   * corrected votes) is stored in `verificaciones` by the verification module.
+   */
   async saveResolution(resolution: ResolutionRecord): Promise<void> {
-    const { error } = await this.supabase.from('verifications').upsert(
-      {
-        acta_id: resolution.actaId,
-        version: resolution.version,
-        auditor: resolution.auditor,
-        decision: resolution.decision,
-        corrected_votes: resolution.votes ?? null,
-        reason: resolution.reason || null,
-        fencing: resolution.fencing,
-        created_at: new Date(resolution.resolvedAt).toISOString(),
-      },
-      { onConflict: 'acta_id,version,fencing', ignoreDuplicates: true },
-    );
-    if (error) throw error;
     await this.updateStatus(resolution);
   }
 

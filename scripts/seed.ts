@@ -57,7 +57,7 @@ async function main(): Promise<void> {
     return;
   }
   await loadJurorUsers(supabase, catalog, password);
-  console.info(`✔ ${catalog.tables.length} juror users upserted (juror-0001 … juror-${catalog.tables.length})`);
+  console.info(`✔ ${catalog.tables.length} juror users upserted in usuarios (jurado0001 … jurado${catalog.tables.length})`);
 }
 
 main().catch((error: unknown) => {

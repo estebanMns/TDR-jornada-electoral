@@ -16,10 +16,10 @@
     "test": "pnpm -r --if-present test",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "seed": "tsx scripts/seed.ts",
-    "fake-acta": "tsx scripts/fake-acta.ts",
+    "seed": "tsx --env-file-if-exists=.env scripts/seed.ts",
+    "fake-acta": "tsx --env-file-if-exists=.env scripts/fake-acta.ts",
     "fake:dudosas": "pnpm --filter @preconteo/web fake:dudosas",
-    "dev-token": "tsx scripts/dev-token.ts",
+    "dev-token": "tsx --env-file-if-exists=.env scripts/dev-token.ts",
     "smoke": "pnpm --filter @preconteo/web smoke"
   },
   "devDependencies": {
