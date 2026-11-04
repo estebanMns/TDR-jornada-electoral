@@ -2,10 +2,12 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { publicCatalogPlugin } from './src/features/publico/catalog/publicCatalogPlugin';
 
 export default defineConfig({
   plugins: [
     react(),
+    publicCatalogPlugin(),
     tailwindcss(),
     // RT-6: after the first visit the juror screens open without network.
     VitePWA({

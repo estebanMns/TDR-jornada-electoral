@@ -1,19 +1,4 @@
 {
-  "name": "@preconteo/shared",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "description": "Contratos compartidos (§7 GENERAL.md). Solo cambia por PR aprobado por los tres.",
-  "exports": {
-    ".": "./src/index.js",
-    "./redisKeys": "./src/redisKeys.js",
-    "./roles": "./src/roles.js",
-    "./reglaContable": "./src/reglaContable.js",
-    "./schemas/auth": "./src/schemas/auth.js",
-    "./schemas/verificacion": "./src/schemas/verificacion.js"
-  },
-  "dependencies": {
-    "zod": "^4.1.12"
   "name": "@electoral/shared",
   "version": "0.1.0",
   "private": true,

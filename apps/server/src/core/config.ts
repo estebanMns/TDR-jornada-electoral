@@ -14,6 +14,13 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url().optional().or(z.literal('').transform(() => undefined)),
   SUPABASE_SERVICE_KEY: z.string().optional().or(z.literal('').transform(() => undefined)),
   PHOTO_DIR: z.string().default('./.data/photos'),
+  /** Public aggregation window in ms (GENERAL §9.2). */
+  WINDOW_MS: z.coerce.number().int().positive().default(2_000),
+  /**
+   * Public stream opens per IP per minute (GENERAL §7.1: 30). Mobile carriers use
+   * CGNAT (many phones share one IP), and a load test comes from one IP: raise it then.
+   */
+  PUBLIC_STREAM_OPENS_PER_MIN: z.coerce.number().int().positive().default(30),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 });
 

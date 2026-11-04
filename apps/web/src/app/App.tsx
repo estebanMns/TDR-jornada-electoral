@@ -8,6 +8,8 @@ import { RequireRole } from './RequireRole';
 import { adoptDevTokenFromUrl } from './session';
 
 const JurorRoutes = lazy(() => import('../features/jurado/JurorRoutes'));
+const PublicRoutes = lazy(() => import('../features/publico/PublicRoutes'));
+const OpsDashboard = lazy(() => import('../features/ops/OpsDashboard'));
 
 adoptDevTokenFromUrl();
 
@@ -16,7 +18,16 @@ export function App() {
     <BrowserRouter>
       <Suspense fallback={<p className="p-6 text-slate-500">Cargando…</p>}>
         <Routes>
-          <Route path="/" element={<Navigate to="/jurado" replace />} />
+          <Route path="/" element={<Navigate to="/resultados" replace />} />
+          <Route path="/resultados/*" element={<PublicRoutes />} />
+          <Route
+            path="/ops"
+            element={
+              <RequireRole roles={['ADMIN']}>
+                <OpsDashboard />
+              </RequireRole>
+            }
+          />
           <Route
             path="/jurado/*"
             element={

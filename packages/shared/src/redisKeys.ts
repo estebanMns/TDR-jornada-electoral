@@ -45,6 +45,10 @@ export const redisKeys = {
   rateLimit: (credential: string, window: number) => `rl:${credential}:${window}`,
   instanceMetrics: (instanceId: string) => `metrics:inst:${instanceId}`,
   metricsInstances: () => 'metrics:instances',
+
+  // --- Public (owner: Evelyn) ---
+  /** LIST of the latest INP samples (LPUSH + LTRIM 1000). */
+  vitalsInp: () => 'vitals:inp',
 } as const;
 
 /** Pub/Sub channels (ephemeral notifications; no history needed). */

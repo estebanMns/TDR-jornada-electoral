@@ -1,37 +1,96 @@
+/**
+ * SSE client with MANUAL reconnection (owner: Evelyn, GENERAL §9.2/§9.4).
+ *
+ * Native EventSource retries on its own with a fixed delay: when an instance
+ * dies, every browser comes back at the same moment (avalanche). Here, on
+ * `error` the source is closed and reopened after a full-jitter backoff,
+ * passing the last id in `?lastEventId=` so the server replays what was missed.
+ */
 import { backoffDelay } from './backoff';
 
-export type SseStatus = 'live' | 'reconnecting' | 'paused';
-export type SseMessage = { id?: string; event: string; data: any };
-type Options = { url: string; onMessage: (message: SseMessage) => void; onStatus?: (status: SseStatus) => void; signal?: AbortSignal };
+export type SseState = 'connecting' | 'open' | 'reconnecting' | 'closed';
 
-export function connectSse({ url, onMessage, onStatus, signal }: Options) {
-  let source: EventSource | null = null;
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  let stopped = false, attempt = 0, lastId = '';
-  const close = () => { stopped = true; source?.close(); if (timer) clearTimeout(timer); };
-  const schedule = () => {
-    if (stopped || timer) return;
-    onStatus?.('reconnecting');
-    timer = setTimeout(() => { timer = undefined; attempt++; connect(); }, backoffDelay(attempt));
+export interface SseClientOptions {
+  /** Builds the URL; receives the last id seen (null the first time). */
+  url: (lastEventId: string | null) => string;
+  /** Handlers per SSE event name; `data` is already parsed JSON. */
+  handlers: Record<string, (data: unknown, id: string | null) => void>;
+  onState?: (state: SseState) => void;
+  /** Event the server sends to ask for a reconnection (`reconnect`). */
+  reconnectEvent?: string;
+  delay?: (attempt: number) => number;
+}
+
+export class SseClient {
+  private source: EventSource | null = null;
+  private lastEventId: string | null = null;
+  private attempt = 0;
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private stopped = true;
+  private readonly onOnline = () => {
+    // Network is back: no reason to wait for the rest of the backoff.
+    if (this.timer) this.reconnectNow();
   };
-  const connect = () => {
-    if (stopped || signal?.aborted) return;
-    const target = new URL(url, window.location.origin);
-    if (lastId) target.searchParams.set('lastEventId', lastId);
-    source = new EventSource(target);
-    source.onopen = () => { attempt = 0; onStatus?.('live'); };
-    const handle = (event: MessageEvent) => {
-      if (event.lastEventId) lastId = event.lastEventId;
-      let data: any = event.data;
-      try { data = JSON.parse(event.data); } catch {}
-      onMessage({ id: event.lastEventId || undefined, event: event.type, data });
-      if (event.type === 'estado') onStatus?.(data.pausado ? 'paused' : 'live');
-      if (event.type === 'reconectar') { source?.close(); schedule(); }
+
+  constructor(private readonly options: SseClientOptions) {}
+
+  get lastId(): string | null {
+    return this.lastEventId;
+  }
+
+  start(): void {
+    if (!this.stopped) return;
+    this.stopped = false;
+    window.addEventListener('online', this.onOnline);
+    this.connect('connecting');
+  }
+
+  stop(): void {
+    this.stopped = true;
+    window.removeEventListener('online', this.onOnline);
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
+    this.source?.close();
+    this.source = null;
+    this.options.onState?.('closed');
+  }
+
+  private connect(state: SseState): void {
+    this.options.onState?.(state);
+    const source = new EventSource(this.options.url(this.lastEventId));
+    this.source = source;
+
+    source.onopen = () => {
+      this.attempt = 0;
+      this.options.onState?.('open');
     };
-    ['snapshot', 'delta', 'estado', 'reconectar'].forEach(type => source!.addEventListener(type, handle as EventListener));
-    source.onerror = () => { source?.close(); schedule(); };
-  };
-  signal?.addEventListener('abort', close, { once: true });
-  connect();
-  return close;
+    source.onerror = () => this.scheduleReconnect();
+
+    for (const [event, handler] of Object.entries(this.options.handlers)) {
+      source.addEventListener(event, (message) => {
+        const { data, lastEventId } = message as MessageEvent<string>;
+        if (lastEventId) this.lastEventId = lastEventId;
+        handler(JSON.parse(data), lastEventId || null);
+      });
+    }
+    source.addEventListener(this.options.reconnectEvent ?? 'reconnect', () => this.scheduleReconnect());
+  }
+
+  private scheduleReconnect(): void {
+    if (this.stopped || this.timer) return;
+    this.source?.close();
+    this.source = null;
+    this.options.onState?.('reconnecting');
+    const wait = (this.options.delay ?? backoffDelay)(this.attempt++);
+    this.timer = setTimeout(() => {
+      this.timer = null;
+      if (!this.stopped) this.connect('reconnecting');
+    }, wait);
+  }
+
+  private reconnectNow(): void {
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
+    if (!this.stopped) this.connect('reconnecting');
+  }
 }

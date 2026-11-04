@@ -34,3 +34,17 @@ Code is written in English. The Spanish terms of `docs/GENERAL.md` map to:
 | topic `puesto:{id}` | `station:{id}` |
 | `cat:mesa:{id}`, `jurado:{sub}:actas` | `cat:table:{id}`, `juror:{sub}:actas` |
 | `aplicarResolucion` | `applyResolution` |
+
+## Public stream and operations (Evelyn, additive)
+
+| File | Content |
+|---|---|
+| `publicStream.ts` | SSE events (`delta`, `snapshot`, `status`, `reconnect`), `PublicDelta`, `PublicSnapshot`, `PublicStatus`, `compareStreamIds` |
+| `ops.ts` | `OpsSnapshot` / `InstanceMetrics` emitted by `GET /api/ops/stream` (Meneses) and drawn by `/ops` (Evelyn); `PUBLIC_METRICS` names |
+| `redisKeys.vitalsInp()` | `vitals:inp` LIST with the last 1.000 INP samples |
+
+| GENERAL.md | Code |
+|---|---|
+| `event: delta / snapshot / estado / reconectar` | `delta` / `snapshot` / `status` / `reconnect` |
+| `cambios`, `motivos`, `ts_rx_min` | `changes`, `reasons`, `tsRxMin` |
+| `mesas: { informadas, total }` | `tables: { reported, total }` |

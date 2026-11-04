@@ -11,6 +11,7 @@ import type { Metrics } from './core/metrics';
 import { fixedWindowRateLimit } from './core/rateLimit';
 import { redisStatus } from './core/redis';
 import { actasModule } from './modules/actas';
+import { publicoModule } from './modules/publico';
 
 export interface AppDependencies {
   config: AppConfig;
@@ -53,6 +54,18 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
     localPhotoDirectory: config.PHOTO_DIR,
     createBlockingRedis: deps.createBlockingRedis,
     startWorkers: deps.startWorkers ?? false,
+  });
+
+  const clientIp = (request: { headers: Record<string, unknown>; ip: string }) =>
+    String(request.headers['x-real-ip'] ?? request.ip);
+  await app.register(publicoModule, {
+    redis,
+    createBlockingRedis: deps.createBlockingRedis,
+    metrics: deps.metrics,
+    instanceId: config.INSTANCE_ID,
+    windowMs: config.WINDOW_MS,
+    streamRateLimit: fixedWindowRateLimit({ redis, limit: config.PUBLIC_STREAM_OPENS_PER_MIN, windowSeconds: 60, credential: (r) => `sse:${clientIp(r)}` }),
+    vitalsRateLimit: fixedWindowRateLimit({ redis, limit: 60, windowSeconds: 60, credential: (r) => `vitals:${clientIp(r)}` }),
   });
 
   return app;

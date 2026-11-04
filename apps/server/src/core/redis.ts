@@ -35,3 +35,22 @@ export function createBlockingRedis(url: string): Redis {
 export function redisStatus(redis: Redis): RedisStatus {
   return redis.status === 'ready' ? 'ok' : 'degraded';
 }
+
+/**
+ * Notifies every change between `ok` and `degraded` (RF-10). Listens to the
+ * connection events instead of polling. Returns a function that stops listening.
+ */
+export function watchRedisStatus(redis: Redis, onChange: (status: RedisStatus) => void): () => void {
+  let last = redisStatus(redis);
+  const check = () => {
+    const current = redisStatus(redis);
+    if (current === last) return;
+    last = current;
+    onChange(current);
+  };
+  const events = ['ready', 'close', 'end', 'error', 'reconnecting'] as const;
+  for (const event of events) redis.on(event, check);
+  return () => {
+    for (const event of events) redis.off(event, check);
+  };
+}
