@@ -1,5 +1,5 @@
 import type { Redis } from 'ioredis';
-import { redisKeys, type Catalog } from '@electoral/shared';
+import { redisKeys, type Catalog } from '@preconteo/contracts';
 
 const PIPELINE_CHUNK = 1_000;
 

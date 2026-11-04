@@ -5,7 +5,7 @@
 import fastifyJwt from '@fastify/jwt';
 import fp from 'fastify-plugin';
 import type { FastifyReply, FastifyRequest, preHandlerAsyncHookHandler } from 'fastify';
-import type { JwtPayload, Role } from '@electoral/shared';
+import type { JwtPayload, Role } from '@preconteo/contracts';
 
 declare module '@fastify/jwt' {
   interface FastifyJWT {

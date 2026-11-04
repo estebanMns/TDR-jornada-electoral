@@ -15,7 +15,7 @@ import { DEFAULT_SEED, generateCatalog } from './catalog/generateCatalog';
 import { loadCatalogIntoRedis } from './catalog/loadRedis';
 import { loadCatalogIntoSupabase, loadJurorUsers } from './catalog/loadSupabase';
 
-const CATALOG_PATH = fileURLToPath(new URL('../packages/shared/catalog.json', import.meta.url));
+const CATALOG_PATH = fileURLToPath(new URL('../packages/contracts/catalog.json', import.meta.url));
 
 async function main(): Promise<void> {
   const args = new Set(process.argv.slice(2));

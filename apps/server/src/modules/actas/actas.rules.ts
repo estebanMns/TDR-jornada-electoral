@@ -5,7 +5,7 @@ import {
   VOTE_OPTION_IDS,
   type ActaSubmission,
   type DoubtReason,
-} from '@electoral/shared';
+} from '@preconteo/contracts';
 import type { CatalogTableEntry } from './actas.types';
 
 export interface ActaAssessment {

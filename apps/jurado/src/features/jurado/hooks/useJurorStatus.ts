@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { JurorActaState } from '@electoral/shared';
+import type { JurorActaState } from '@preconteo/contracts';
 import { getSession } from '../../../app/session';
 import { fetchMine } from '../api/actasApi';
 

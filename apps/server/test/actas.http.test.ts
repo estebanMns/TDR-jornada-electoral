@@ -2,7 +2,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { Redis } from 'ioredis';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import type { JwtPayload } from '@electoral/shared';
+import type { JwtPayload } from '@preconteo/contracts';
 import { buildApp } from '../src/app';
 import { loadConfig } from '../src/core/config';
 import { InMemoryMetrics } from '../src/core/metrics';

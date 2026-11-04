@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { ActaStatus, ReviewDecision, Votes } from '@electoral/shared';
+import type { ActaStatus, ReviewDecision, Votes } from '@preconteo/contracts';
 import type { StoredVersionRecord } from './actas.types';
 
 export interface StatusChange {

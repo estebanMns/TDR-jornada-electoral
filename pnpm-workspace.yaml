@@ -3,6 +3,13 @@ packages:
   - packages/*
   # Evelyn agrega `loadtest` cuando cree la carpeta.
 
+# Packages allowed to run install scripts (pnpm 10 and pnpm >= 11 syntax).
 onlyBuiltDependencies:
+  - esbuild
   - sharp
   - unrs-resolver
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true

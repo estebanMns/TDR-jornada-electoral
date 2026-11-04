@@ -2,7 +2,7 @@
  * Bootstrap app shell (owner: Meneses). Stateless session: the JWT is kept in
  * localStorage and its payload decoded locally (the server validates it).
  */
-import type { JwtPayload } from '@electoral/shared';
+import type { JwtPayload } from '@preconteo/contracts';
 
 const SESSION_KEY = 'electoral.token';
 

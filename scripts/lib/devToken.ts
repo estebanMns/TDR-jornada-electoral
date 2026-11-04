@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import type { JwtPayload } from '@electoral/shared';
+import type { JwtPayload } from '@preconteo/contracts';
 
 /**
  * HS256 token equivalent to the one issued by the login endpoint.

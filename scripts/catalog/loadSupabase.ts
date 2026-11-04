@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
-import type { Catalog } from '@electoral/shared';
+import type { Catalog } from '@preconteo/contracts';
 
 const UPSERT_CHUNK = 1_000;
 

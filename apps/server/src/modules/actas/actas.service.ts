@@ -8,7 +8,7 @@ import {
   type ResolutionInput,
   type ResolutionReceipt,
   type ResolutionResult,
-} from '@electoral/shared';
+} from '@preconteo/contracts';
 import type { Metrics } from '../../core/metrics';
 import {
   ActaForbiddenError,

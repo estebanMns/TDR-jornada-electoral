@@ -1,4 +1,4 @@
-# @electoral/shared
+# @preconteo/contracts
 
 Contracts that cross module boundaries (GENERAL §7). Changes here need approval
 from the three owners and must be **additive**.

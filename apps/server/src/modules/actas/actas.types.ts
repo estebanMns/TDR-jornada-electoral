@@ -1,4 +1,4 @@
-import type { ActaStatus, ReceiptResult, ResolutionResult, ReviewDecision, Votes } from '@electoral/shared';
+import type { ActaStatus, ReceiptResult, ResolutionResult, ReviewDecision, Votes } from '@preconteo/contracts';
 
 /** Catalog entry of a table as stored in `cat:table:{id}`. */
 export interface CatalogTableEntry {

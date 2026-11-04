@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { Catalog, CatalogMunicipality, CatalogStation, CatalogTable, CatalogVoteOption } from '@electoral/shared';
+import type { Catalog, CatalogMunicipality, CatalogStation, CatalogTable, CatalogVoteOption } from '@preconteo/contracts';
 
 export interface TableInfo {
   table: CatalogTable;
@@ -12,7 +12,7 @@ let catalogPromise: Promise<Catalog> | null = null;
 
 /** The catalog is a separate lazy chunk, precached by the service worker for offline use. */
 function loadCatalog(): Promise<Catalog> {
-  catalogPromise ??= import('@electoral/shared/catalog.json').then((module) => module.default as Catalog);
+  catalogPromise ??= import('@preconteo/contracts/catalog.json').then((module) => module.default as Catalog);
   return catalogPromise;
 }
 

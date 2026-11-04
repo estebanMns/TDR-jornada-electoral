@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { sumVotes, VOTE_OPTION_IDS, type ActaSubmission, type VoteOptionId, type Votes } from '@electoral/shared';
+import { sumVotes, VOTE_OPTION_IDS, type ActaSubmission, type VoteOptionId, type Votes } from '@preconteo/contracts';
 import { getSession } from '../../../app/session';
 import { CountField } from '../components/CountField';
 import { PhotoField } from '../components/PhotoField';

@@ -4,7 +4,7 @@
  */
 import type { Redis } from 'ioredis';
 import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { redisKeys, type ActaSubmission, type JwtPayload } from '@electoral/shared';
+import { redisKeys, type ActaSubmission, type JwtPayload } from '@preconteo/contracts';
 import { createRandom } from '../../../scripts/catalog/random';
 import type { ActasService } from '../src/modules/actas/actas.service';
 import {

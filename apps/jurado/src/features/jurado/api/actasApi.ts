@@ -3,7 +3,7 @@ import {
   type ActaReceipt,
   type ActaSubmission,
   type JurorActaState,
-} from '@electoral/shared';
+} from '@preconteo/contracts';
 import { httpRequest } from '../../../shared/net/http';
 
 /** Outcome of one delivery attempt, already classified for the outbox. */

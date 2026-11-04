@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { Role } from '@electoral/shared';
+import type { Role } from '@preconteo/contracts';
 import { getSession } from './session';
 
 /** Bootstrap guard (owner: Meneses). */

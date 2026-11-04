@@ -17,8 +17,8 @@ import {
   type Catalog,
   type JurorActaState,
   type Votes,
-} from '@electoral/shared';
-import catalogJson from '../packages/shared/catalog.json' with { type: 'json' };
+} from '@preconteo/contracts';
+import catalogJson from '../packages/contracts/catalog.json' with { type: 'json' };
 import { devJurorPayload, devSecret, signDevToken } from './lib/devToken';
 
 const catalog = catalogJson as Catalog;

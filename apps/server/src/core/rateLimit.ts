@@ -4,7 +4,7 @@
  */
 import type { FastifyReply, FastifyRequest, preHandlerAsyncHookHandler } from 'fastify';
 import type { Redis } from 'ioredis';
-import { redisKeys } from '@electoral/shared';
+import { redisKeys } from '@preconteo/contracts';
 
 export interface RateLimitOptions {
   redis: Redis;

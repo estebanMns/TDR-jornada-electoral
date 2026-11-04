@@ -1,4 +1,4 @@
-import type { ActaSubmission } from '@electoral/shared';
+import type { ActaSubmission } from '@preconteo/contracts';
 import { backoffDelay } from '../../../shared/net/backoff';
 import { NetworkError, TimeoutError } from '../../../shared/net/http';
 import { submitActa, uploadPhoto } from '../api/actasApi';

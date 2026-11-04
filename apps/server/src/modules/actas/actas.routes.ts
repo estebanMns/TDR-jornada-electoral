@@ -7,7 +7,7 @@ import {
   idempotencyKeySchema,
   type ActaReceipt,
   type ReceiptResult,
-} from '@electoral/shared';
+} from '@preconteo/contracts';
 import type { Authorize } from '../../core/auth';
 import { ActasError } from './actas.errors';
 import type { ActasService } from './actas.service';

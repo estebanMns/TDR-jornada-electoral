@@ -1,5 +1,5 @@
 import { createStore, get, set, values } from 'idb-keyval';
-import type { ActaReceipt, ActaSubmission } from '@electoral/shared';
+import type { ActaReceipt, ActaSubmission } from '@preconteo/contracts';
 
 export type DeliveryState =
   /** Waiting for its next attempt (offline, server unavailable…). */

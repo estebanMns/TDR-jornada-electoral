@@ -29,7 +29,7 @@ photo.storage.ts      Supabase Storage / local directory
   `abs` holds the new **absolute** values of only the fields that changed per
   topic (`dep`, `mun:{id}`, `station:{id}`); `_reported` = tables reporting.
   Totals live in `tot:*` hashes, rankings in `rank:*` sorted sets, table counts
-  in `cat:n:*`. `parseAccumulatedEvent` in `@electoral/shared` parses entries.
+  in `cat:n:*`. `parseAccumulatedEvent` in `@preconteo/contracts` parses entries.
 - **Verification (Meneses)** — doubtful/conflicting actas are added to
   `verif:queue` (score = priority, lower first) and `verif:case:{acta}` (hash:
   `version, reason, votes, voters, enabled, photoHash, status=PENDING…`; conflicts
@@ -44,7 +44,7 @@ photo.storage.ts      Supabase Storage / local directory
 
 ```bash
 docker run -d --name electoral-redis-test -p 6380:6379 redis:7-alpine
-pnpm --filter @electoral/server test
+pnpm --filter @preconteo/server test
 pnpm seed --no-supabase && pnpm dev:server
 pnpm fake-acta --table 42 --repeat 3
 ```

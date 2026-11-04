@@ -1,4 +1,4 @@
-import type { JurorActaState } from '@electoral/shared';
+import type { JurorActaState } from '@preconteo/contracts';
 import type { OutboxEntry } from './outbox/outboxStore';
 
 export type Tone = 'neutral' | 'progress' | 'success' | 'warning' | 'danger';

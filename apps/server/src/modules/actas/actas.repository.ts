@@ -6,7 +6,7 @@ import {
   redisKeys,
   STREAM_LIMITS,
   type ActaStatus,
-} from '@electoral/shared';
+} from '@preconteo/contracts';
 import type {
   ApplyActaContext,
   ApplyActaOutcome,
