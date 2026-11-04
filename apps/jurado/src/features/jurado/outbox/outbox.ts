@@ -12,6 +12,7 @@ const CHANNEL_NAME = 'electoral-juror-outbox';
 type Listener = () => void;
 
 export interface OutboxOptions {
+  /** Dev token; null when the platform session cookie authenticates. */
   getToken: () => string | null;
   now?: () => number;
 }
@@ -125,8 +126,8 @@ export class Outbox {
   }
 
   private async deliverDue(): Promise<void> {
+    if (!navigator.onLine) return;
     const token = this.options.getToken();
-    if (!token || !navigator.onLine) return;
     const now = this.now();
     // Oldest first: corrections must not overtake the original.
     const due = (await outboxStore.list()).reverse();
@@ -140,7 +141,7 @@ export class Outbox {
     }
   }
 
-  private async deliver(entry: OutboxEntry, token: string): Promise<void> {
+  private async deliver(entry: OutboxEntry, token: string | null): Promise<void> {
     await this.save({ ...entry, state: 'SENDING' });
     const attempts = entry.attempts + 1;
     try {
@@ -174,7 +175,7 @@ export class Outbox {
     return this.save({ ...entry, state: 'QUEUED', attempts, lastError: code, nextAttemptAt: this.now() + delay });
   }
 
-  private async deliverPhoto(entry: OutboxEntry, token: string): Promise<void> {
+  private async deliverPhoto(entry: OutboxEntry, token: string | null): Promise<void> {
     const photoAttempts = entry.photoAttempts + 1;
     let outcome: Awaited<ReturnType<typeof uploadPhoto>>;
     try {

@@ -16,8 +16,8 @@ export function useJurorStatus() {
   const etag = useRef<string | null>(null);
 
   const refresh = useCallback(async () => {
-    const token = getSession()?.token;
-    if (!token || document.visibilityState === 'hidden' || !navigator.onLine) return;
+    if (!getSession() || document.visibilityState === 'hidden' || !navigator.onLine) return;
+    const token = getSession()?.token ?? null;
     try {
       const outcome = await fetchMine(token, etag.current);
       if (outcome.kind === 'changed') {

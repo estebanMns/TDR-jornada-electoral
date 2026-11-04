@@ -16,4 +16,4 @@ const { values } = parseArgs({
 
 const token = signDevToken(devJurorPayload(Number(values.table)), devSecret());
 console.info(token);
-console.info(`\n${values.web}/jurado#token=${token}`);
+console.info(`\n${values.web}/jurado/#token=${token}`);

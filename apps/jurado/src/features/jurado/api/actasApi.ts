@@ -23,13 +23,13 @@ function retryAfterMs(headers: Headers): number | undefined {
 }
 
 export async function submitActa(
-  token: string,
+  token: string | null,
   submission: ActaSubmission,
   idempotencyKey: string,
 ): Promise<SubmitOutcome> {
   const response = await httpRequest<unknown>('/api/actas', {
     method: 'POST',
-    token,
+    token: token ?? undefined,
     headers: { 'idempotency-key': idempotencyKey },
     body: submission,
   });
@@ -48,10 +48,10 @@ export async function submitActa(
 
 export type PhotoOutcome = 'stored' | 'retry' | 'unauthorized' | 'rejected';
 
-export async function uploadPhoto(token: string, actaId: string, version: number, photo: Blob): Promise<PhotoOutcome> {
+export async function uploadPhoto(token: string | null, actaId: string, version: number, photo: Blob): Promise<PhotoOutcome> {
   const response = await httpRequest<unknown>(`/api/actas/${encodeURIComponent(actaId)}/v/${version}/photo`, {
     method: 'PUT',
-    token,
+    token: token ?? undefined,
     body: photo,
     timeoutMs: 30_000,
   });
@@ -64,9 +64,9 @@ export async function uploadPhoto(token: string, actaId: string, version: number
 export type MineOutcome = { kind: 'not-modified' } | { kind: 'changed'; etag: string | null; actas: JurorActaState[] };
 
 /** Conditional GET: an unchanged status costs a 304 with no body. */
-export async function fetchMine(token: string, etag: string | null): Promise<MineOutcome> {
+export async function fetchMine(token: string | null, etag: string | null): Promise<MineOutcome> {
   const response = await httpRequest<{ actas: JurorActaState[] }>('/api/actas/mine', {
-    token,
+    token: token ?? undefined,
     headers: etag ? { 'if-none-match': etag } : {},
   });
   if (response.status === 304) return { kind: 'not-modified' };
