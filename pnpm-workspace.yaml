@@ -1,6 +1,8 @@
 packages:
-  - "apps/*"
-  - "packages/*"
+  - apps/*
+  - packages/*
+  # Evelyn agrega `loadtest` cuando cree la carpeta.
 
-allowBuilds:
-  esbuild: true
+onlyBuiltDependencies:
+  - sharp
+  - unrs-resolver
