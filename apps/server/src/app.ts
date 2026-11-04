@@ -1,6 +1,6 @@
 /**
- * Application composition (platform owner: Meneses). Each feature module is
- * registered with one line.
+ * Composition of the actas service (Fastify). The rest of the platform runs
+ * in apps/web (Next.js custom server); nginx routes /api/actas here.
  */
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { Redis } from 'ioredis';
@@ -50,6 +50,7 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
       windowSeconds: 60,
       credential: (request) => `juror:${request.user.sub}`,
     }),
+    photoBucket: config.SUPABASE_BUCKET_FOTOS,
     localPhotoDirectory: config.PHOTO_DIR,
     createBlockingRedis: deps.createBlockingRedis,
     startWorkers: deps.startWorkers ?? false,

@@ -6,11 +6,12 @@ import { createSupabase } from './core/supabase';
 
 async function main(): Promise<void> {
   const config = loadConfig();
-  const redis = createRedis(config.REDIS_URL);
+  const redisOptions = { password: config.REDIS_PASSWORD };
+  const redis = createRedis(config.REDIS_URL, redisOptions);
   const app = await buildApp({
     config,
     redis,
-    createBlockingRedis: () => createBlockingRedis(config.REDIS_URL),
+    createBlockingRedis: () => createBlockingRedis(config.REDIS_URL, redisOptions),
     supabase: createSupabase(config),
     metrics: new InMemoryMetrics(),
     startWorkers: true,
@@ -25,7 +26,7 @@ async function main(): Promise<void> {
   process.once('SIGINT', () => void shutdown('SIGINT'));
   process.once('SIGTERM', () => void shutdown('SIGTERM'));
 
-  await app.listen({ port: config.PORT, host: config.HOST });
+  await app.listen({ port: config.ACTAS_PORT, host: config.HOST });
 }
 
 main().catch((error: unknown) => {

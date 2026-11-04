@@ -71,10 +71,10 @@ alter table public.acta_versions  enable row level security;
 
 -- ---------------------------------------------------------------- storage
 
--- Private bucket for acta photos: `{acta_id}/v{version}.jpg`.
+-- Private bucket for acta photos: `{acta_id}/v{version}.jpg` (SUPABASE_BUCKET_FOTOS).
 -- Auditors only see them through short-lived signed URLs.
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('acta-photos', 'acta-photos', false, 409600, array['image/jpeg', 'image/png', 'image/webp'])
+values ('actas-fotos', 'actas-fotos', false, 409600, array['image/jpeg', 'image/png', 'image/webp'])
 on conflict (id) do nothing;
 
 commit;

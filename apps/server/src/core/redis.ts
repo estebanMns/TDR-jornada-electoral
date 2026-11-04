@@ -1,5 +1,5 @@
 /**
- * Bootstrap core (platform owner: Meneses).
+ * Core of the actas service.
  *
  * Fail fast instead of queueing (RF-10): with `enableOfflineQueue: false`
  * and a short `commandTimeout`, a dead Redis turns into an immediate error
@@ -24,8 +24,9 @@ export function createRedis(url: string, options: RedisOptions = {}): Redis {
  * Connection for blocking reads (XREAD/XREADGROUP BLOCK). It must not share
  * the command connection and must not time out while blocked.
  */
-export function createBlockingRedis(url: string): Redis {
+export function createBlockingRedis(url: string, options: RedisOptions = {}): Redis {
   return new Redis(url, {
+    ...options,
     enableOfflineQueue: true,
     maxRetriesPerRequest: null,
     retryStrategy: (attempt) => Math.min(attempt * 200, 2_000),

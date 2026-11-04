@@ -1,5 +1,5 @@
 /**
- * Bootstrap core (platform owner: Meneses). Fixed-window counter in Redis
+ * Core of the actas service. Fixed-window counter in Redis
  * (`rl:{credential}:{window}` INCR + EXPIRE), GENERAL §7.1.
  */
 import type { FastifyReply, FastifyRequest, preHandlerAsyncHookHandler } from 'fastify';
