@@ -32,21 +32,24 @@ export function PhotoField({ photo, onChange }: PhotoFieldProps) {
   }
 
   return (
-    <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-slate-200">
+    <div className="rounded-xl border border-rejilla bg-hoja p-3">
       <div className="flex items-center gap-3">
         {preview ? (
-          <img src={preview} alt="Foto del acta" className="size-20 rounded-lg object-cover ring-1 ring-slate-200" />
+          <img src={preview} alt="Foto del acta" className="size-20 rounded-lg border border-rejilla object-cover" />
         ) : (
-          <div className="grid size-20 place-items-center rounded-lg bg-slate-100 text-3xl text-slate-400" aria-hidden>
-            📷
+          <div className="grid size-20 place-items-center rounded-lg border border-dashed border-rejilla bg-papel text-tinta-suave" aria-hidden>
+            <svg viewBox="0 0 24 24" className="size-8" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <path d="M4 8h3l2-3h6l2 3h3v11H4z" strokeLinejoin="round" />
+              <circle cx="12" cy="13" r="3.5" />
+            </svg>
           </div>
         )}
         <div className="flex-1">
           <p className="font-medium">Foto del acta E-14</p>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-tinta-suave">
             {busy ? 'Procesando…' : photo ? `${Math.round(photo.blob.size / 1024)} KB · lista` : 'Obligatoria'}
           </p>
-          <label className="mt-2 inline-block cursor-pointer rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white">
+          <label className="mt-2 inline-block cursor-pointer rounded-lg bg-tinta px-3 py-1.5 text-sm font-semibold text-papel focus-within:outline-2 focus-within:outline-indeleble">
             {photo ? 'Tomar otra' : 'Tomar foto'}
             <input
               type="file"
@@ -58,7 +61,7 @@ export function PhotoField({ photo, onChange }: PhotoFieldProps) {
           </label>
         </div>
       </div>
-      {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
+      {error && <p className="mt-2 text-sm text-revision">{error}</p>}
     </div>
   );
 }

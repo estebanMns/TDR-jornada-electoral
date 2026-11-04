@@ -23,16 +23,16 @@ export function BarraBloqueo() {
 
   const [clase, texto] = !conectado
     ? [
-        'bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200',
+        'bg-revision/10 text-revision',
         'Sin conexión: el caso se liberará en ≤ 30 s si no vuelve la red.',
       ]
     : porExpirar
       ? [
-          'bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-200',
+          'bg-revision/10 text-revision',
           `Se liberará por inactividad en ${duracion(Math.max(0, restanteInactividad))}. Mueve el mouse o escribe para conservarlo.`,
         ]
       : [
-          'bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200',
+          'bg-registrada/10 text-registrada',
           'Caso bloqueado para ti · renovándose automáticamente.',
         ];
 

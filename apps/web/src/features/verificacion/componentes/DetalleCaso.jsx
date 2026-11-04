@@ -50,11 +50,11 @@ export function DetalleCaso({ acta }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Link href="/verificacion" className="text-sm text-slate-500 hover:underline">
+          <Link href="/verificacion" className="text-sm text-tinta-suave hover:underline">
             ← Cola
           </Link>
           <h1 className="font-mono text-2xl font-semibold">{caso.acta}</h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-tinta-suave">
             {caso.municipio.nombre} · {caso.puesto.nombre} · mesa {caso.mesa} · versión{' '}
             {caso.version}
           </p>

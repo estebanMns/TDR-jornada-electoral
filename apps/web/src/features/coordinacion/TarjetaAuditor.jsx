@@ -8,7 +8,7 @@ export function TarjetaAuditor({ auditor, ahora }) {
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="font-medium">{auditor.nombre}</p>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-tinta-suave">
             {auditor.rol.toLowerCase()} · conectado hace {duracion(ahora - auditor.conectadoDesde)}
           </p>
         </div>
@@ -17,11 +17,11 @@ export function TarjetaAuditor({ auditor, ahora }) {
         </Insignia>
       </div>
       <dl className="mt-3 grid grid-cols-2 gap-y-1 text-sm">
-        <dt className="text-slate-500">Instancia</dt>
+        <dt className="text-tinta-suave">Instancia</dt>
         <dd className="text-right font-mono">{auditor.instancia}</dd>
-        <dt className="text-slate-500">Caso</dt>
+        <dt className="text-tinta-suave">Caso</dt>
         <dd className="text-right font-mono">{auditor.caso ?? '—'}</dd>
-        <dt className="text-slate-500">Lleva</dt>
+        <dt className="text-tinta-suave">Lleva</dt>
         <dd className="text-right tabular-nums">
           {auditor.caso && auditor.casoDesde ? duracion(ahora - auditor.casoDesde) : '—'}
         </dd>

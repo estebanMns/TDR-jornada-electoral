@@ -53,11 +53,11 @@ export function describeEntry(entry: OutboxEntry, online: boolean, server?: Juro
 }
 
 export const TONE_CLASSES: Record<Tone, string> = {
-  neutral: 'bg-slate-100 text-slate-700 ring-slate-300',
-  progress: 'bg-blue-50 text-blue-800 ring-blue-200',
-  success: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
-  warning: 'bg-amber-50 text-amber-900 ring-amber-200',
-  danger: 'bg-red-50 text-red-800 ring-red-200',
+  neutral: 'bg-papel text-tinta-suave ring-rejilla',
+  progress: 'bg-indeleble-claro text-indeleble ring-indeleble/30',
+  success: 'bg-registrada/10 text-registrada ring-registrada/30',
+  warning: 'bg-revision/10 text-revision ring-revision/30',
+  danger: 'bg-red-500/10 text-red-600 ring-red-500/30 dark:text-red-300',
 };
 
 /** Highest version known for the acta, locally or on the server. */

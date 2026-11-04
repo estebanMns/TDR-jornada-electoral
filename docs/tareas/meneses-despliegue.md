@@ -2,14 +2,100 @@
 
 > **Este documento es todo lo que necesitas para desplegar**: no hace falta que el resto del desarrollo esté listo.
 >
-> **Qué despliegas tú:** backend (8 instancias), frontend (lo sirve nginx en el mismo dominio), nginx como balanceador y Redis. Todo va en **una instancia EC2 de AWS** con Docker Compose.
-> **Qué no despliegas:** Supabase. Es un servicio en la nube que **ya creó Jose**; tú solo pones sus dos claves en el `.env` del servidor.
+> El despliegue tiene **dos partes**:
+> - **Parte A — Frontend en Vercel** (gratis, siempre activo, ~15 min). Es la **URL que se entrega al profesor** y debe funcionar a cualquier hora.
+> - **Parte B — Backend en AWS** (8 instancias + nginx como balanceador + Redis en **una instancia EC2** con Docker Compose). Es la API que usa el frontend.
 >
-> **Idea:** desplegar **desde el primer día** un *esqueleto* (una página web vacía + un backend que solo responde `whoami`/`health`) con toda la infraestructura real: 8 instancias, nginx sin afinidad, Redis y HTTPS. Después, cada vez que algo se integra en `main`, se vuelve a desplegar con un comando. Así el despliegue no se deja para el final, que es cuando todo falla.
+> **Qué no despliegas:** Supabase. Es un servicio en la nube que **ya creó Jose**; tú solo pones sus dos claves en el `.env` del servidor.
 >
 > Cubre RT-1 (8 instancias detrás de un balanceador), RT-2 (sin afinidad) y RT-10 (URL pública que funciona sin intervención).
 
+### URLs que se entregan
+| Qué | URL |
+|---|---|
+| Repositorio | `https://github.com/estebanMns/TDR-jornada-electoral` |
+| Frontend (Vercel) | `https://<nombre-del-proyecto>.vercel.app` — se fija en el paso A.2 (sugerido: `tdr-jornada-electoral`) |
+| API (AWS) | `https://preconteo-ucc.duckdns.org` — la usa el frontend; no hace falta entregarla |
+
 ---
+
+# Parte A — Frontend en Vercel
+
+### Cómo queda armado
+```
+Navegador ──► https://tdr-jornada-electoral.vercel.app   (Vercel: archivos estáticos del SPA, 24/7, gratis)
+    │
+    └──► https://preconteo-ucc.duckdns.org/api/...  /ws/...   (AWS: nginx → app1…app8 → Redis)
+```
+El frontend y la API quedan en **dominios distintos**, así que:
+- el frontend arma las URLs con la variable **`VITE_API_URL`** (vacía en local → usa el proxy de Vite);
+- el backend debe permitir **CORS** desde el dominio de Vercel (variable `CORS_ORIGINS`, ver A.5);
+- el WebSocket y los SSE se conectan **directo** a la API (Vercel no hace de proxy para ellos).
+
+Si el backend está apagado, el frontend **igual abre**: el jurado puede llenar y encolar actas (se envían solas cuando la API vuelva) y la página pública muestra "Reconectando".
+
+### A.1 Requisito: el código del frontend en `main`
+Vercel publica lo que haya en la rama `main` de GitHub. El monorepo y `apps/web` ya existen en la rama de Jose (`feat/jose-ingesta`): **cuando esa rama esté en `main`**, Vercel ya puede construir. No crees un `apps/web` propio (chocaría con el de Jose).
+
+Agrega `apps/web/vercel.json` (lo necesita el SPA para que `/jurado`, `/resultados`, etc. no den 404 al recargar):
+```json
+{
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "headers": [
+    { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+  ]
+}
+```
+Y en el `package.json` de la **raíz** fija la versión de pnpm (Vercel la respeta):
+```json
+"packageManager": "pnpm@10.18.0"
+```
+(Usa la misma versión que tienen instalada: `pnpm -v`.)
+
+### A.2 Crear el proyecto en Vercel
+1. Entra a **vercel.com** con tu cuenta de GitHub (`estebanMns`, el dueño del repo) → plan **Hobby** (gratis).
+2. **Add New… → Project → Import** `TDR-jornada-electoral` (si no aparece: *Adjust GitHub App Permissions* y dale acceso al repo).
+3. Configura:
+
+   | Campo | Valor |
+   |---|---|
+   | **Project Name** | `tdr-jornada-electoral` (define la URL `https://tdr-jornada-electoral.vercel.app`) |
+   | **Framework Preset** | Vite |
+   | **Root Directory** | `apps/web` (deja marcado *Include files outside the root directory*, porque usa `packages/shared`) |
+   | **Install Command** | `pnpm install --frozen-lockfile` |
+   | **Build Command** | `pnpm build` |
+   | **Output Directory** | `dist` |
+
+4. **Environment Variables** (para *Production* y *Preview*):
+
+   | Nombre | Valor |
+   |---|---|
+   | `VITE_API_URL` | `https://preconteo-ucc.duckdns.org` (sin `/` al final) |
+   | `ENABLE_EXPERIMENTAL_COREPACK` | `1` (para que use la versión de pnpm de `packageManager`) |
+
+5. **Deploy**. Al terminar, la URL de producción es `https://tdr-jornada-electoral.vercel.app` → **esa es la que se entrega**.
+
+### A.3 Despliegues siguientes
+Automáticos: cada push a `main` publica una nueva versión de producción; cada PR recibe una URL de *preview* para revisarlo antes del merge. No hay que hacer nada más.
+
+### A.4 Verificar
+- [ ] La URL abre desde un celular con datos móviles y en una ventana de incógnito (sin pedir login de Vercel).
+- [ ] Recargar estando en `/jurado` o `/resultados` no da 404.
+- [ ] En las herramientas del navegador (*Network*), las peticiones van a `https://preconteo-ucc.duckdns.org/api/...` y no hay errores de CORS (cuando el backend esté arriba).
+
+> Si alguien abre la URL y Vercel pide iniciar sesión, es porque abrió una URL de *preview*. Entrega siempre la de producción (`tdr-jornada-electoral.vercel.app`), o desactiva *Settings → Deployment Protection → Vercel Authentication*.
+
+### A.5 Lo que el backend necesita para hablar con Vercel
+- **CORS** en `core/` del servidor (tu parte): registrar `@fastify/cors` con `origin` = lista de `CORS_ORIGINS` (separada por comas), métodos `GET, POST, PUT, OPTIONS`, y exponer los headers `X-Instance`, `ETag` y `Retry-After`. En el `.env` de la EC2:
+  ```
+  CORS_ORIGINS=https://tdr-jornada-electoral.vercel.app,http://localhost:5173
+  ```
+- **WebSocket**: validar el header `Origin` contra la misma lista.
+- El frontend (Jose, Evelyn y tú) construye toda URL con un helper `apiUrl(path)` en `apps/web/src/shared/net/` que antepone `import.meta.env.VITE_API_URL ?? ''`. Para WS se cambia `https` por `wss`.
+
+---
+
+# Parte B — Backend en AWS
 
 ## 0. Lo que necesitas antes de empezar
 
@@ -117,151 +203,38 @@ git clone git@github.com:<usuario>/<repo>.git ~/preconteo
 
 ---
 
-## 4. Archivos del esqueleto (súbelos al repo desde tu PC)
+## 4. Archivos de infraestructura (súbelos al repo desde tu PC)
 
-Si el monorepo todavía no existe, estos son los archivos mínimos. Cuando los demás agreguen sus módulos, **estos archivos no cambian**: solo crece el código dentro de `apps/`.
+El monorepo (`package.json`, `pnpm-workspace.yaml`, `apps/server`, `apps/web`, `packages/shared`, `.env.example`) **ya existe en la rama de Jose**. No lo crees de nuevo: cuando esté en `main`, trabaja en una rama `feat/meneses-infra` que solo agregue la carpeta `infra/` y el `.dockerignore`.
 
-### 4.1 Raíz
-`package.json`
-```json
-{
-  "name": "preconteo",
-  "private": true,
-  "packageManager": "pnpm@10.0.0",
-  "scripts": {
-    "dev": "pnpm -r --parallel dev",
-    "build": "pnpm -r build"
-  }
-}
-```
-`pnpm-workspace.yaml`
-```yaml
-packages:
-  - "apps/*"
-  - "packages/*"
-  - "loadtest"
-```
-`.dockerignore`
+`.dockerignore` (en la raíz)
 ```
 **/node_modules
 **/dist
 .env
 .git
-```
-`.gitignore`
-```
-node_modules
-dist
-.env
-```
-`.env.example` (se sube al repo **sin** valores secretos)
-```
-DOMAIN=preconteo-ucc.duckdns.org
-JWT_SECRET=cambiar
-REDIS_PASSWORD=cambiar
-SUPABASE_URL=
-SUPABASE_SERVICE_KEY=
-WINDOW_MS=2000
+.data
 ```
 
-### 4.2 Backend mínimo — `apps/server`
-`apps/server/package.json`
-```json
-{
-  "name": "server",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "tsx watch src/main.ts",
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/main.js"
-  },
-  "dependencies": { "fastify": "^5.0.0", "ioredis": "^5.4.0" },
-  "devDependencies": { "typescript": "^5.6.0", "tsx": "^4.19.0", "@types/node": "^22.0.0" }
-}
-```
-`apps/server/tsconfig.json`
-```json
-{
-  "compilerOptions": {
-    "target": "ES2022", "module": "NodeNext", "moduleResolution": "NodeNext",
-    "outDir": "dist", "rootDir": "src", "strict": true, "esModuleInterop": true, "skipLibCheck": true
-  },
-  "include": ["src"]
-}
-```
-`apps/server/src/main.ts`
-```ts
-import Fastify from "fastify";
-import { Redis } from "ioredis";
-
-const INSTANCE_ID = process.env.INSTANCE_ID ?? "local";
-const redis = new Redis(process.env.REDIS_URL ?? "redis://localhost:6379", {
-  enableOfflineQueue: false, // fallar rápido si Redis no está (RF-10)
-  maxRetriesPerRequest: 1,
-  commandTimeout: 500,
-});
-redis.on("error", () => {}); // el estado se consulta con ping; evita logs infinitos
-
-const app = Fastify({ logger: true });
-
-app.addHook("onSend", async (_req, reply) => {
-  reply.header("X-Instance", INSTANCE_ID);
-});
-
-async function redisOk() {
-  try { return (await redis.ping()) === "PONG"; } catch { return false; }
-}
-
-app.get("/api/whoami", async () => ({
-  instancia: INSTANCE_ID,
-  redis: (await redisOk()) ? "ok" : "degradado",
-}));
-
-app.get("/api/health", async (_req, reply) =>
-  (await redisOk()) ? { ok: true } : reply.code(503).send({ ok: false }),
-);
-
-const close = async () => { await app.close(); redis.disconnect(); process.exit(0); };
-process.on("SIGTERM", close);
-process.on("SIGINT", close);
-
-await app.listen({ host: "0.0.0.0", port: Number(process.env.PORT ?? 3000) });
-```
-
-### 4.3 Frontend mínimo — `apps/web`
-Desde la raíz, en tu PC:
-```bash
-pnpm create vite apps/web --template react-ts
-```
-En `apps/web/package.json` cambia `"name"` a `"web"`. (Evelyn luego le pone Tailwind/shadcn; para el despliegue basta con que `pnpm --filter web build` genere `apps/web/dist`.)
-
-Luego, en la raíz: `pnpm install` (genera `pnpm-lock.yaml`, **súbelo al repo**).
-
-### 4.4 Infraestructura — `infra/`
+### 4.1 Infraestructura — `infra/`
 `infra/Dockerfile.server`
 ```dockerfile
 FROM node:22-alpine
 RUN corepack enable
 WORKDIR /repo
 COPY . .
-RUN pnpm install --frozen-lockfile && pnpm --filter "server..." build
+RUN pnpm install --frozen-lockfile
 WORKDIR /repo/apps/server
 ENV NODE_ENV=production
-CMD ["node", "--max-old-space-size=1024", "dist/main.js"]
+ENV NODE_OPTIONS=--max-old-space-size=1024
+# El servidor corre TypeScript directo con tsx (script "start" de @electoral/server)
+CMD ["pnpm", "start"]
 ```
-`infra/Dockerfile.nginx` (compila el frontend y lo sirve nginx)
+`infra/Dockerfile.nginx` (solo balanceador: el frontend está en Vercel)
 ```dockerfile
-FROM node:22-alpine AS web
-RUN corepack enable
-WORKDIR /repo
-COPY . .
-RUN pnpm install --frozen-lockfile && pnpm --filter "web..." build
-
 FROM nginx:1.28-alpine
 COPY infra/nginx.conf /etc/nginx/nginx.conf
 COPY infra/default.conf.template /etc/nginx/templates/default.conf.template
-COPY --from=web /repo/apps/web/dist /usr/share/nginx/html
 ```
 `infra/nginx.conf`
 ```nginx
@@ -340,10 +313,9 @@ server {
     client_max_body_size 10m;                     # fotos de actas
   }
 
-  # Frontend (SPA)
+  # El frontend vive en Vercel; aquí solo hay API
   location / {
-    root /usr/share/nginx/html;
-    try_files $uri /index.html;
+    return 404;
   }
 }
 ```
@@ -431,7 +403,7 @@ cd ~/preconteo
 cp .env.example .env
 nano .env
 ```
-Llénalo: `DOMAIN` (tu subdominio), `JWT_SECRET` y `REDIS_PASSWORD` con valores aleatorios (`openssl rand -hex 32`), y las dos variables de Supabase que te pasó Jose.
+Llénalo: `DOMAIN` (tu subdominio), `CORS_ORIGINS` (URL de Vercel, ver A.5), `JWT_SECRET` y `REDIS_PASSWORD` con valores aleatorios (`openssl rand -hex 32`), y las dos variables de Supabase que te pasó Jose.
 
 ### Certificado HTTPS (una vez, con el puerto 80 libre)
 ```bash
@@ -456,7 +428,8 @@ La primera vez tarda unos minutos (construye las imágenes). Al final debes ver 
 
 ## 6. Verificación (hazla después de cada despliegue)
 
-- [ ] `https://preconteo-ucc.duckdns.org` abre (página de Vite por ahora) desde el celular con datos móviles.
+- [ ] `https://preconteo-ucc.duckdns.org/api/whoami` responde desde el celular con datos móviles.
+- [ ] El frontend de Vercel habla con la API sin errores de CORS (Parte A.4).
 - [ ] **Reparto sin afinidad (RT-1/RT-2)**:
   ```bash
   for i in $(seq 1 16); do curl -s https://preconteo-ucc.duckdns.org/api/whoami; echo; done
@@ -503,6 +476,7 @@ Si la VM está apagada, el workflow falla: es normal, se vuelve a correr cuando 
 
 - **En local** nadie necesita las 8 instancias: `docker run -d -p 6379:6379 redis:7.4-alpine` y `pnpm dev`. Para probar con varias instancias, el mismo `docker compose` sirve en local quitando el bloque HTTPS (o con un `infra/docker-compose.local.yml` que solo levante redis + 2 apps + nginx en el puerto 8080).
 - **Cuando agreguen variables nuevas** (`.env`), deben agregarlas a `.env.example` y avisarte para que las pongas en la VM.
+- **Frontend**: nadie lo despliega a mano; cada merge a `main` lo publica Vercel. Si agregan una variable `VITE_*`, hay que crearla también en Vercel (*Settings → Environment Variables*) y volver a desplegar.
 - **Cuando agreguen rutas nuevas**: si empiezan por `/api/` o `/ws/` ya pasan por nginx; si es un stream SSE nuevo, avísales que debe ir bajo `/api/publico/stream` u `/api/ops/stream` o hay que agregarlo al bloque sin buffer.
 
 ---
@@ -528,6 +502,10 @@ Si la VM está apagada, el workflow falla: es normal, se vuelve a correr cuando 
 | `whoami` siempre da la misma instancia | Se usa `curl` con keep-alive desde el navegador | Probar con `curl` en bucle (cada uno abre conexión nueva) |
 | Los SSE llegan en bloques o con retraso | Falta `proxy_buffering off` en esa ruta | Revisar el `location` de streams |
 | `pnpm install --frozen-lockfile` falla en Docker | No se subió `pnpm-lock.yaml` actualizado | Correr `pnpm install` en local y subir el lock |
+| Vercel falla con *Unsupported engine* o versión de pnpm | Falta `packageManager` en la raíz o `ENABLE_EXPERIMENTAL_COREPACK=1` | Parte A.1 y A.2 |
+| Vercel: recargar `/jurado` da 404 | Falta `apps/web/vercel.json` | Parte A.1 |
+| El navegador muestra *blocked by CORS policy* | `CORS_ORIGINS` no incluye la URL exacta de Vercel | Parte A.5, y volver a correr `deploy.sh` |
+| El front carga pero dice "sin conexión" | La EC2 está detenida | Encenderla; todo vuelve solo |
 | La factura sube | La instancia quedó prendida o se cambió a `m6i.xlarge` y no se devolvió | Detenerla siempre que no se use; revisar *Budgets* |
 | `ssh` dice *Connection timed out* | Cambió tu IP pública y el security group solo permite la anterior | EC2 → Security groups → `preconteo-sg` → editar regla SSH → *My IP* |
 | `ssh` dice *UNPROTECTED PRIVATE KEY FILE* | Permisos del `.pem` muy abiertos | Paso 1.4 |

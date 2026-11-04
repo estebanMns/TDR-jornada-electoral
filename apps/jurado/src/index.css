@@ -1,7 +1,45 @@
+@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource-variable/public-sans';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
 @import 'tailwindcss';
 
+/*
+ * Mesa a Mesa — misma identidad que la plataforma (apps/web/src/app/globals.css).
+ * Las fuentes van empaquetadas (no Google Fonts): la app del jurado abre sin red.
+ */
 @theme {
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-papel: #f3f5f9;
+  --color-hoja: #ffffff;
+  --color-tinta: #25215c;
+  --color-tinta-suave: #5b5f7a;
+  --color-rejilla: #d3dae8;
+  --color-indeleble: #6b3fd0;
+  --color-indeleble-claro: #e9e2fb;
+  --color-registrada: #0f7b5f;
+  --color-revision: #b45309;
+
+  --font-display: 'Bricolage Grotesque Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Public Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-papel: #121029;
+    --color-hoja: #1b1838;
+    --color-tinta: #ecebf7;
+    --color-tinta-suave: #a3a3c2;
+    --color-rejilla: #2f2b57;
+    --color-indeleble: #a78bfa;
+    --color-indeleble-claro: #2c2360;
+    --color-registrada: #34d399;
+    --color-revision: #fbbf24;
+  }
+}
+
+:root {
+  color-scheme: light dark;
 }
 
 html,
@@ -11,5 +49,19 @@ body,
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-papel font-sans text-tinta antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-indeleble);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

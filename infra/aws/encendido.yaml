@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Mesa a Mesa - enciende la instancia EC2 cuando alguien abre la URL publica (scale-to-zero)
+
+# La URL publica (Vercel) redirige a la URL de esta funcion. La funcion:
+#   - instancia apagada  -> la enciende y muestra "Encendiendo el servidor..." (se recarga sola);
+#   - encendiendo        -> la misma pagina de espera;
+#   - lista (/api/health) -> redirige (307) a la app, conservando la ruta.
+# El apagado lo hace la propia instancia tras 30 min sin visitas (infra/aws/apagado-por-inactividad.sh).
+#
+#   aws cloudformation deploy --stack-name preconteo-encendido --template-file infra/aws/encendido.yaml \
+#     --capabilities CAPABILITY_IAM --parameter-overrides InstanceId=i-... Destino=https://HOST
+
+Parameters:
+  InstanceId:
+    Type: String
+    Description: Instancia EC2 que se enciende
+  Destino:
+    Type: String
+    Description: URL base de la app en la instancia (sin / final)
+
+Resources:
+  Rol:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: lambda.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: encender-instancia
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ec2:DescribeInstances
+                Resource: '*'
+              - Effect: Allow
+                Action: ec2:StartInstances
+                Resource: !Sub arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/${InstanceId}
+
+  Funcion:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Enciende la instancia de Mesa a Mesa bajo demanda
+      Runtime: nodejs22.x
+      Handler: index.handler
+      Timeout: 10
+      MemorySize: 128
+      Role: !GetAtt Rol.Arn
+      Environment:
+        Variables:
+          INSTANCE_ID: !Ref InstanceId
+          DESTINO: !Ref Destino
+      Code:
+        ZipFile: |
+          const { EC2Client, DescribeInstancesCommand, StartInstancesCommand } = require('@aws-sdk/client-ec2');
+          const ec2 = new EC2Client({});
+          const ID = process.env.INSTANCE_ID;
+          const DESTINO = process.env.DESTINO;
+
+          async function appLista() {
+            try {
+              const r = await fetch(`${DESTINO}/api/health`, { signal: AbortSignal.timeout(2500) });
+              return r.ok;
+            } catch {
+              return false;
+            }
+          }
+
+          exports.handler = async (event) => {
+            const ruta = event.rawPath || '/';
+            const query = event.rawQueryString ? `?${event.rawQueryString}` : '';
+            const { Reservations } = await ec2.send(new DescribeInstancesCommand({ InstanceIds: [ID] }));
+            const estado = Reservations[0].Instances[0].State.Name;
+
+            if (estado === 'running' && (await appLista())) {
+              return { statusCode: 307, headers: { Location: `${DESTINO}${ruta}${query}`, 'Cache-Control': 'no-store' } };
+            }
+            if (estado === 'stopped') await ec2.send(new StartInstancesCommand({ InstanceIds: [ID] }));
+            return { statusCode: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }, body: pagina(estado) };
+          };
+
+          function pagina(estado) {
+            const detalle = {
+              stopped: 'El servidor estaba apagado para ahorrar costos. Lo estamos encendiendo.',
+              pending: 'El servidor está arrancando.',
+              running: 'El servidor ya arrancó; estamos levantando la aplicación.',
+              stopping: 'El servidor se estaba apagando; lo encenderemos en cuanto termine.',
+            }[estado] ?? 'Preparando el servidor.';
+            return `<!doctype html><html lang="es"><head><meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="5">
+          <title>Encendiendo · Mesa a Mesa</title>
+          <style>
+          :root{--papel:#f3f5f9;--hoja:#fff;--tinta:#25215c;--suave:#5b5f7a;--rejilla:#d3dae8;--indeleble:#6b3fd0}
+          @media (prefers-color-scheme:dark){:root{--papel:#121029;--hoja:#1b1838;--tinta:#ecebf7;--suave:#a3a3c2;--rejilla:#2f2b57;--indeleble:#a78bfa}}
+          body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--papel);color:var(--tinta);font:16px/1.5 system-ui,sans-serif;padding:20px;box-sizing:border-box}
+          main{max-width:420px;width:100%;background:var(--hoja);border:1px solid var(--rejilla);border-radius:16px;padding:28px}
+          .marca{display:flex;gap:8px;align-items:center;font-weight:700}
+          .g{display:grid;grid-template-columns:7px 7px;gap:2px}.g i{width:7px;height:7px;border-radius:1.5px;background:var(--indeleble)}.g i:last-child{background:var(--rejilla)}
+          h1{font-size:22px;margin:20px 0 6px}p{color:var(--suave);margin:0}
+          .barra{height:6px;border-radius:9px;background:var(--rejilla);overflow:hidden;margin-top:22px}
+          .barra span{display:block;height:100%;width:40%;background:var(--indeleble);border-radius:9px;animation:ir 1.4s ease-in-out infinite}
+          @keyframes ir{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+          small{display:block;margin-top:14px;color:var(--suave);font-family:ui-monospace,monospace;font-size:12px}
+          </style></head><body><main>
+          <div class="marca"><span class="g"><i></i><i></i><i></i><i></i></span>Mesa a Mesa</div>
+          <h1>Encendiendo el servidor…</h1><p>${detalle} Suele tardar entre 1 y 2 minutos; esta página entra sola cuando esté listo.</p>
+          <div class="barra"><span></span></div><small>estado: ${estado}</small>
+          </main></body></html>`;
+          }
+
+  UrlFuncion:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !Ref Funcion
+      AuthType: NONE
+
+  PermisoUrl:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Funcion
+      Action: lambda:InvokeFunctionUrl
+      Principal: '*'
+      FunctionUrlAuthType: NONE
+
+  PermisoInvocar:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Funcion
+      Action: lambda:InvokeFunction
+      Principal: '*'
+      InvokedViaFunctionUrl: true
+
+Outputs:
+  UrlEncendido:
+    Description: URL a la que debe redirigir la URL publica
+    Value: !GetAtt UrlFuncion.FunctionUrl

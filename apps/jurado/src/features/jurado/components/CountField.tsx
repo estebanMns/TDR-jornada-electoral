@@ -12,11 +12,11 @@ interface CountFieldProps {
 export function CountField({ label, hint, color, value, onChange }: CountFieldProps) {
   const id = useId();
   return (
-    <div className="flex items-center gap-3 rounded-xl bg-white p-3 shadow-sm ring-1 ring-slate-200">
+    <div className="flex items-center gap-3 rounded-xl border border-rejilla bg-hoja p-3">
       {color && <span className="h-10 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: color }} aria-hidden />}
       <label htmlFor={id} className="min-w-0 flex-1">
         <span className="block truncate font-medium">{label}</span>
-        {hint && <span className="block truncate text-sm text-slate-500">{hint}</span>}
+        {hint && <span className="block truncate text-sm text-tinta-suave">{hint}</span>}
       </label>
       <input
         id={id}
@@ -25,7 +25,7 @@ export function CountField({ label, hint, color, value, onChange }: CountFieldPr
         autoComplete="off"
         value={value}
         onChange={(event) => onChange(event.target.value.replace(/\D/g, '').slice(0, 5))}
-        className="w-24 rounded-lg border border-slate-300 px-3 py-2 text-right text-2xl tabular-nums focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200"
+        className="w-24 rounded-lg border border-rejilla bg-papel px-3 py-2 text-right font-mono text-2xl tabular-nums focus:border-indeleble focus:outline-none focus:ring-2 focus:ring-indeleble/20"
       />
     </div>
   );

@@ -3,6 +3,7 @@ import { publicarContenedor } from './contenedorGlobal.js';
 import { moduloVerificacion } from './modules/verificacion/index.js';
 import { moduloOps } from './modules/ops/index.js';
 import { moduloActas } from './modules/actas/index.js';
+import { moduloPublico } from './modules/publico/index.js';
 
 /**
  * Módulos de negocio: UNA línea por módulo (cada dueño agrega la suya).
@@ -12,7 +13,7 @@ const MODULOS = [
   moduloVerificacion, // Meneses
   moduloOps, // Meneses
   moduloActas, // Jose
-  // moduloPublico,   // Evelyn
+  moduloPublico, // Evelyn
 ];
 
 /** Construye la aplicación completa de una instancia. */

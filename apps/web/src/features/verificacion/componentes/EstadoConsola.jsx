@@ -29,7 +29,7 @@ export function EstadoConsola() {
       {estado.redis !== 'ok' && (
         <p
           role="status"
-          className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-950 dark:text-amber-200"
+          className="rounded-lg bg-revision/10 px-3 py-2 text-sm text-revision"
         >
           Servicio degradado: las acciones están deshabilitadas hasta que se recupere.
         </p>
@@ -37,7 +37,7 @@ export function EstadoConsola() {
       {estado.ultimoError && (
         <p
           role="alert"
-          className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"
+          className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-700"
         >
           {MENSAJE_ERROR[estado.ultimoError.codigo] ?? `Error: ${estado.ultimoError.codigo}`}
           {estado.ultimoError.acta && ` (${estado.ultimoError.acta})`}

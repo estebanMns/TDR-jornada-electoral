@@ -1,0 +1,81 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Preconteo electoral - one EC2 host running docker compose (nginx + app1-8 + actas1-8 + redis)
+
+# Deploy:
+#   aws cloudformation deploy --stack-name preconteo --template-file infra/aws/preconteo-ec2.yaml \
+#     --parameter-overrides AmiId=<ubuntu-24.04-ami> SshCidr=<your-ip>/32 KeyName=preconteo
+# Delete everything:
+#   aws cloudformation delete-stack --stack-name preconteo
+
+Parameters:
+  AmiId:
+    Type: AWS::EC2::Image::Id
+    Description: Ubuntu Server 24.04 LTS AMI for the region (arm64 for t4g, amd64 otherwise)
+  InstanceType:
+    Type: String
+    # Free-plan accounts only allow free-tier-eligible types. t4g.small (ARM, 2 GB + swap) is the cheapest that runs
+    # the stack (~US$17/month with disk and IP). For load tests switch temporarily to m7i-flex.large (x86, needs an amd64 AMI).
+    Default: t4g.small
+    AllowedValues: [t4g.small, t3.small, c7i-flex.large, m7i-flex.large, t3.medium, t3.large, m6i.xlarge]
+  VolumeSize:
+    Type: Number
+    Default: 20
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+  SshCidr:
+    Type: String
+    Description: Only this CIDR may open SSH (your public IP /32)
+  RepoUrl:
+    Type: String
+    Default: https://github.com/estebanMns/TDR-jornada-electoral.git
+
+Resources:
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Preconteo - SSH from the team, HTTP and HTTPS from anywhere
+      SecurityGroupIngress:
+        - { IpProtocol: tcp, FromPort: 22, ToPort: 22, CidrIp: !Ref SshCidr, Description: SSH }
+        - { IpProtocol: tcp, FromPort: 80, ToPort: 80, CidrIp: 0.0.0.0/0, Description: HTTP }
+        - { IpProtocol: tcp, FromPort: 443, ToPort: 443, CidrIp: 0.0.0.0/0, Description: HTTPS }
+      Tags: [{ Key: Name, Value: preconteo-sg }]
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SecurityGroupIds: [!GetAtt SecurityGroup.GroupId]
+      MetadataOptions: { HttpTokens: required, HttpEndpoint: enabled }
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs: { VolumeSize: !Ref VolumeSize, VolumeType: gp3, Encrypted: true, DeleteOnTermination: true }
+      Tags: [{ Key: Name, Value: preconteo }]
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -eux
+          # Swap: 16 Node processes + builds on a 2 GB host
+          fallocate -l 4G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+          echo '/swapfile none swap sw 0 0' >> /etc/fstab
+          apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
+          curl -fsSL https://get.docker.com | sh
+          usermod -aG docker ubuntu
+          apt-get install -y certbot git
+          sudo -u ubuntu git clone ${RepoUrl} /home/ubuntu/preconteo
+          cp /home/ubuntu/preconteo/infra/sysctl/99-preconteo.conf /etc/sysctl.d/ && sysctl --system
+          touch /var/lib/cloud/preconteo-ready
+
+  ElasticIp:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref Instance
+      Tags: [{ Key: Name, Value: preconteo-ip }]
+
+Outputs:
+  PublicIp:
+    Value: !Ref ElasticIp
+  InstanceId:
+    Value: !Ref Instance

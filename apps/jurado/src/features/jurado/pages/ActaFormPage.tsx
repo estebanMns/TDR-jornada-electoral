@@ -51,8 +51,8 @@ export default function ActaFormPage() {
   const voters = toNumber(values.voters);
   const complete = Object.values(values).every((value) => value !== '') && photo !== null;
 
-  if (info === null) return <p className="p-6 text-slate-500">Cargando mesa…</p>;
-  if (info === 'not-found') return <p className="p-6 text-red-700">Tu usuario no tiene una mesa asignada en el catálogo.</p>;
+  if (info === null) return <p className="p-6 text-tinta-suave">Cargando mesa…</p>;
+  if (info === 'not-found') return <p className="p-6 text-revision">Tu usuario no tiene una mesa asignada en el catálogo.</p>;
 
   const { table, station, municipality, voteOptions } = info;
   const version = highestKnownVersion(table.actaId, entries, serverActas) + 1;
@@ -78,26 +78,26 @@ export default function ActaFormPage() {
 
   return (
     <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4 pb-32">
-      <section className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
-        <p className="text-sm text-slate-500">{municipality.name}</p>
-        <h1 className="text-lg font-semibold">{station.name}</h1>
-        <dl className="mt-2 grid grid-cols-3 gap-2 text-sm">
-          <div>
-            <dt className="text-slate-500">Mesa</dt>
-            <dd className="font-medium">{table.number}</dd>
+      <section className="rounded-xl border border-rejilla bg-hoja p-4">
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-tinta-suave">Acta E-14 · {table.actaId}</p>
+        <h1 className="mt-2 font-display text-xl font-bold leading-tight tracking-tight">{station.name}</h1>
+        <p className="text-sm text-tinta-suave">{municipality.name}</p>
+        <dl className="mt-3 grid grid-cols-3 divide-x divide-rejilla rounded-lg border border-rejilla text-center">
+          <div className="p-2">
+            <dt className="text-xs text-tinta-suave">Mesa</dt>
+            <dd className="font-mono text-lg font-medium">{table.number}</dd>
           </div>
-          <div>
-            <dt className="text-slate-500">Habilitados</dt>
-            <dd className="font-medium tabular-nums">{table.enabled}</dd>
+          <div className="p-2">
+            <dt className="text-xs text-tinta-suave">Habilitados</dt>
+            <dd className="font-mono text-lg font-medium tabular-nums">{table.enabled}</dd>
           </div>
-          <div>
-            <dt className="text-slate-500">Versión</dt>
-            <dd className="font-medium">{version}</dd>
+          <div className="p-2">
+            <dt className="text-xs text-tinta-suave">Versión</dt>
+            <dd className="font-mono text-lg font-medium">{version}</dd>
           </div>
         </dl>
-        <p className="mt-2 font-mono text-xs text-slate-500">{table.actaId}</p>
         {isCorrection && (
-          <p className="mt-3 rounded-lg bg-amber-50 p-2 text-sm text-amber-900 ring-1 ring-amber-200">
+          <p className="mt-3 rounded-lg border border-revision/30 bg-revision/10 p-2 text-sm">
             Estás enviando una <strong>corrección</strong>: reemplazará la versión {version - 1}.
           </p>
         )}
@@ -106,6 +106,7 @@ export default function ActaFormPage() {
       <PhotoField photo={photo} onChange={setPhoto} />
 
       <section className="space-y-2" aria-label="Votos por opción">
+        <p className="px-1 pt-2 font-mono text-[11px] uppercase tracking-[0.14em] text-tinta-suave">Votos por opción</p>
         {voteOptions.map((option) => (
           <CountField
             key={option.id}
@@ -125,31 +126,31 @@ export default function ActaFormPage() {
         onChange={(value) => setValues((current) => ({ ...current, voters: value }))}
       />
 
-      <div className="fixed inset-x-0 bottom-0 border-t border-slate-200 bg-white/95 p-3 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 border-t border-rejilla bg-hoja/95 p-3 backdrop-blur">
         <div className="mx-auto max-w-lg">
           <div className="mb-2 flex items-baseline justify-between text-sm" aria-live="polite">
-            <span>
-              Suma de votos: <strong className="tabular-nums">{counted}</strong>
+            <span className="text-tinta-suave">
+              Suma de votos <strong className="ml-1 font-mono text-base text-tinta tabular-nums">{counted}</strong>
             </span>
-            <span>
-              Sufragantes: <strong className="tabular-nums">{voters}</strong>
+            <span className="text-tinta-suave">
+              Sufragantes <strong className="ml-1 font-mono text-base text-tinta tabular-nums">{voters}</strong>
             </span>
           </div>
           {values.voters !== '' && difference !== 0 && (
-            <p className="mb-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900">
+            <p className="mb-2 rounded-lg border border-revision/30 bg-revision/10 p-2 text-sm">
               El total no cuadra ({difference > 0 ? '+' : ''}
               {difference}). Puedes transmitir: el acta irá a verificación.
             </p>
           )}
           {exceedsEnabled && (
-            <p className="mb-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900">
+            <p className="mb-2 rounded-lg border border-revision/30 bg-revision/10 p-2 text-sm">
               Hay más sufragantes que habilitados ({table.enabled}). El acta irá a verificación.
             </p>
           )}
           <button
             type="submit"
             disabled={!complete || submitting}
-            className="w-full rounded-xl bg-blue-700 py-3 text-lg font-semibold text-white disabled:bg-slate-300"
+            className="w-full rounded-xl bg-indeleble py-3.5 text-lg font-semibold text-white transition hover:brightness-110 disabled:opacity-40 dark:text-papel"
           >
             {submitting ? 'Guardando…' : isCorrection ? 'Transmitir corrección' : 'Transmitir acta'}
           </button>

@@ -1,11 +1,60 @@
 @import 'tailwindcss';
 
-/* Tokens mínimos; el sistema de diseño completo (shadcn/ui) es de Evelyn. */
+/*
+ * Mesa a Mesa — identidad visual.
+ * Papel de acta, tinta de formulario y el violeta de la tinta indeleble.
+ * Los nombres describen el mundo electoral; se usan como clases de Tailwind
+ * (bg-papel, text-tinta, border-rejilla, bg-indeleble…).
+ */
+@theme {
+  --color-papel: #f3f5f9; /* fondo: hoja del formulario E-14 */
+  --color-hoja: #ffffff; /* tarjetas */
+  --color-tinta: #25215c; /* texto principal: tinta de formulario */
+  --color-tinta-suave: #5b5f7a; /* texto secundario */
+  --color-rejilla: #d3dae8; /* líneas de la cuadrícula del acta */
+  --color-indeleble: #6b3fd0; /* único acento: tinta indeleble */
+  --color-indeleble-claro: #e9e2fb;
+  --color-registrada: #0f7b5f; /* estado: en vivo / registrada */
+  --color-revision: #b45309; /* estado: corrección / verificación */
+
+  --font-display: var(--fuente-display), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--fuente-texto), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--fuente-datos), ui-monospace, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-papel: #121029;
+    --color-hoja: #1b1838;
+    --color-tinta: #ecebf7;
+    --color-tinta-suave: #a3a3c2;
+    --color-rejilla: #2f2b57;
+    --color-indeleble: #a78bfa;
+    --color-indeleble-claro: #2c2360;
+    --color-registrada: #34d399;
+    --color-revision: #fbbf24;
+  }
+}
+
 :root {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   color-scheme: light dark;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+  @apply bg-papel font-sans text-tinta antialiased;
+}
+
+/* Foco visible siempre (teclado). */
+:focus-visible {
+  outline: 2px solid var(--color-indeleble);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

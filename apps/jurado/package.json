@@ -10,6 +10,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/public-sans": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
     "@preconteo/contracts": "workspace:*",
     "idb-keyval": "^6.3.0",
     "react": "^19.3.1",

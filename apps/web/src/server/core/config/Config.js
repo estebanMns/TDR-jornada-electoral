@@ -21,6 +21,8 @@ const esquema = z.object({
   SUPABASE_BUCKET_FOTOS: z.string().default('actas-fotos'),
 
   WINDOW_MS: z.coerce.number().int().positive().default(2000),
+  // Aperturas del stream público por IP y minuto (súbelo durante la prueba de carga).
+  PUBLICO_LIMITE_POR_MIN: z.coerce.number().int().positive().default(30),
 
   // Actas service (Jose): auditor decisions are forwarded there.
   ACTAS_URL: z.string().url().default('http://localhost:3001'),
@@ -36,7 +38,7 @@ const esquema = z.object({
  *   jwt: { secreto: string, expiracion: string },
  *   redis: { url: string, password?: string },
  *   supabase: { url: string, claveServicio: string, bucketFotos: string },
- *   difusion: { ventanaMs: number },
+ *   difusion: { ventanaMs: number, limitePorMinuto: number },
  *   actas: { url: string },
  *   logNivel: string,
  * }>} Config
@@ -67,7 +69,7 @@ export function cargarConfig(env = process.env) {
       claveServicio: e.SUPABASE_SERVICE_KEY,
       bucketFotos: e.SUPABASE_BUCKET_FOTOS,
     }),
-    difusion: Object.freeze({ ventanaMs: e.WINDOW_MS }),
+    difusion: Object.freeze({ ventanaMs: e.WINDOW_MS, limitePorMinuto: e.PUBLICO_LIMITE_POR_MIN }),
     actas: Object.freeze({ url: e.ACTAS_URL }),
     logNivel: e.LOG_LEVEL,
   });

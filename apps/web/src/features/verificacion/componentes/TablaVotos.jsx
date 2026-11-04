@@ -22,7 +22,7 @@ export function TablaVotos({
     <table className="w-full text-sm">
       <tbody>
         {Object.entries(votos).map(([candidato, valor]) => (
-          <tr key={candidato} className="border-b border-slate-100 dark:border-slate-800">
+          <tr key={candidato} className="border-b border-rejilla">
             <th scope="row" className="py-1.5 text-left font-normal">
               {candidato}
             </th>
@@ -63,7 +63,7 @@ export function TablaVotos({
             )}
           </td>
         </tr>
-        <tr className="text-slate-500">
+        <tr className="text-tinta-suave">
           <th scope="row" className="text-left font-normal">
             Habilitados
           </th>
@@ -72,7 +72,7 @@ export function TablaVotos({
       </tbody>
       <caption className="caption-bottom pt-3 text-left">
         {diferencia === 0 ? (
-          <span className="text-emerald-600">Cuadra con la regla contable.</span>
+          <span className="text-registrada">Cuadra con la regla contable.</span>
         ) : (
           <span className="font-medium text-red-600">
             Descuadre: {diferencia > 0 ? `sobran ${diferencia}` : `faltan ${-diferencia}`} votos.
@@ -95,7 +95,7 @@ function EntradaNumero({ valor, onCambio, etiqueta }) {
       aria-label={etiqueta}
       value={valor}
       onChange={(e) => onCambio(Math.max(0, Number.parseInt(e.target.value || '0', 10)))}
-      className="w-20 rounded-md border border-slate-300 bg-transparent px-2 py-1 text-right dark:border-slate-700"
+      className="w-20 rounded-md border border-rejilla bg-transparent px-2 py-1 text-right"
     />
   );
 }

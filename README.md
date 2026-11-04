@@ -1,7 +1,88 @@
-# Preconteo electoral en tiempo real
+# Mesa a Mesa — preconteo electoral en tiempo real
 
-Monorepo del equipo (Jose, Evelyn, Meneses). Documento base: `docs/GENERAL.md`.
-Esta entrega cubre **la parte de Meneses**: plataforma (core, infraestructura, despliegue), verificación colaborativa (RF-7), presencia (RF-8), detección de Redis caído (RF-10), recolección de métricas (RT-7), autenticación y límite de tasa.
+Sistema de preconteo para una jornada electoral departamental (6.400 mesas, 1.842 puestos, 30 municipios). Los jurados transmiten el acta E-14 de su mesa, el sistema la suma **una sola vez** en mesa, puesto, municipio y departamento, las actas que no cuadran pasan a **verificación humana**, y el público ve el avance **en vivo**. Corre en **8 instancias detrás de un balanceador sin afinidad**, coordinadas solo por **Redis**.
+
+Proyecto de Programación orientada a la web (Ingeniería de Software, 7.º semestre) — Jose, Evelyn y Meneses.
+
+## Probarlo en línea
+
+**URL:** https://tdr-jornada-electoral.vercel.app (redirige al servidor en AWS: https://3-130-180-203.sslip.io)
+
+> **Si la página dice «Encendiendo el servidor…», espera 1–2 minutos.** Para ahorrar crédito, el servidor se apaga solo tras 30 minutos sin visitas y la primera visita lo vuelve a encender (entra sola cuando está listo). Los datos se conservan.
+
+### Usuarios de prueba
+
+| Rol | Usuario | Contraseña | Qué puede hacer |
+|---|---|---|---|
+| Público | — (sin login) | — | Ver resultados en vivo en `/resultados` |
+| Jurado | `jurado0001` … `jurado6400` (uno por mesa) | `9ff4bd66bd77` | Transmitir el acta de **su** mesa y ver su estado |
+| Auditor | `auditor001` … `auditor120` | `auditor-demo` | Tomar y resolver actas dudosas |
+| Coordinador | `coordinador` | `coord-demo` | Lo del auditor + ver quién está conectado |
+| Operación | `admin` | `admin-demo` | Tablero técnico de las 8 instancias (`/ops`) |
+
+Son cuentas de demostración de un entorno de pruebas.
+
+### Recorrido sugerido (10 minutos)
+
+1. **Portada** (`/`): explica el sistema y muestra el **mapa de mesas** del departamento, que se va llenando a medida que informan.
+2. **Resultados** (`/resultados`): elige un municipio y un puesto. Deja la pestaña abierta: se actualiza sola cada 2 s, sin recargar.
+3. **Jurado**: en otra ventana entra con `jurado0001`. Llena el acta (los votos deben sumar los sufragantes), adjunta una foto y transmítela. En *Envíos* aparece **Registrada** y en la pestaña de resultados la mesa se suma en segundos.
+   - **Sin red:** activa el modo avión (o *Offline* en las herramientas del navegador) y transmite: el acta queda en cola y se envía sola al volver la conexión.
+   - **Acta que no cuadra:** pon más sufragantes que votos. Queda **En verificación** y no suma.
+4. **Auditor**: en otro navegador entra con `auditor001` y en otro con `auditor002`. Cuando uno toma el acta, el otro la ve bloqueada al instante. Apruébala o corrígela y mira cómo cambia el resultado. Si un número baja, la página pública explica por qué.
+5. **Coordinador** (`coordinador`): ve a cada auditor, en qué instancia está conectado y qué caso revisa.
+6. **Operación** (`admin`): `/ops` muestra conexiones por instancia, mensajes por segundo, retraso del Event Loop, latencia, mensajes reales frente a la cifra ingenua e INP.
+7. **Ocho instancias sin afinidad**: cada respuesta trae el header `X-Instance`. Desde una terminal:
+   ```bash
+   for i in $(seq 1 16); do curl -s https://3-130-180-203.sslip.io/api/whoami; echo; done
+   ```
+
+## Instalación local
+
+Requisitos: **Node 22+**, **pnpm 10+**, **Docker** y un proyecto de **Supabase** (gratis).
+
+```bash
+git clone https://github.com/estebanMns/TDR-jornada-electoral.git
+cd TDR-jornada-electoral
+pnpm install
+cp .env.example .env
+```
+
+En `.env` llena como mínimo:
+
+| Variable | Valor |
+|---|---|
+| `JWT_SECRET` | cadena aleatoria de 32+ caracteres (`openssl rand -hex 32`) |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` | *Project Settings → API* de Supabase (clave `service_role`) |
+| `REDIS_URL` | `redis://localhost:6379` |
+| `SEED_JUROR_PASSWORD` | contraseña de prueba para los jurados |
+
+En Supabase, aplica las migraciones de `supabase/migrations/` en orden (SQL Editor o `supabase db push`). Luego:
+
+```bash
+docker compose -f infra/docker-compose.local.yml up -d redis redis-test   # Redis :6379 y Redis de pruebas :6380
+pnpm seed          # catálogo (Redis + Supabase) y jurado0001…jurado6400
+pnpm dev           # plataforma (portada, resultados, verificación, ops)  → http://localhost:3000
+pnpm dev:actas     # servicio de actas                                    → :3001
+pnpm dev:jurado    # app del jurado                                       → http://localhost:5173/jurado/
+pnpm test          # pruebas contra Redis real
+```
+
+Todo junto con nginx y varias instancias, como en producción: `docker compose -f infra/docker-compose.local.yml up --build` → http://localhost:8080.
+
+Despliegue en la nube: [`docs/despliegue-aws.md`](docs/despliegue-aws.md) (la infraestructura de AWS está en `infra/aws/preconteo-ec2.yaml`). Pruebas de carga: [`loadtest/README.md`](loadtest/README.md).
+
+## Pantallas
+
+| Ruta | Quién | Qué hace |
+|---|---|---|
+| `/` | todos | Bienvenida: cómo funciona y avance en vivo del departamento |
+| `/resultados` | público | Resultados por departamento, municipio y puesto; mapa de mesas; avisos de corrección |
+| `/login` | equipo | Ingreso; cada rol va a su pantalla |
+| `/jurado/` | jurado | PWA: formulario del acta, foto, cola sin conexión, historial de envíos |
+| `/verificacion` | auditor, coordinador | Cola en vivo de actas dudosas: tomar, aprobar, corregir, rechazar |
+| `/coordinacion` | coordinador | Presencia y reparto del trabajo |
+| `/ops` | admin | Métricas de operación (RT-7) |
 
 ## Stack (adaptación a Next.js + JavaScript)
 
@@ -147,8 +228,29 @@ Detalle del módulo: [`apps/server/src/modules/actas/README.md`](apps/server/src
 ## Integración con los demás
 
 - **Jose**: `moduloActas` registra `actasService` (`RemoteActasService`): traduce la decisión (`APROBAR` → `APPROVE`…) y la envía a `ACTAS_URL/api/actas/resolutions`, donde la aplica el mismo Lua. Si el servicio de actas no responde, lanza error y la verificación compensa y reencola el caso. Las actas dudosas llegan a `verif:case:{acta}` con `casoVerificacionSchema` y se anuncian con `caso_nuevo`; una resolución con `fencing` no mayor al último aplicado se rechaza (`STALE_FENCING`).
-- **Evelyn**: `router.http('/api/publico/stream', …)` con `SseConnection` (tiene `bufferedBytes()`, `onDrain`, `close(motivo)`); `redis.crearConexionBloqueante()` para `XREAD BLOCK`; `metrics.inc/observe/gauge`. El tablero `/ops` consume `GET /api/ops/stream` (eventos `metricas` y `estado`).
+- **Evelyn**: `moduloPublico` (`apps/web/src/server/modules/publico/`) lee `ev:all` —los eventos que escribe `apply_acta.lua`— con `XREAD BLOCK`, agrupa por tópico en ventanas de 2 s y envía por SSE en lotes de 500 cediendo el Event Loop. Ver *Parte de Evelyn* abajo.
+
+## Parte de Evelyn: difusión pública (RF-4, RF-5, RF-6, RF-9)
+
+```
+apps/web/src/server/modules/publico/
+  eventos.js                 # lectura de ev:all (abs por tópico, valores absolutos)
+  publico.service.js         # lector XREAD, ventanas de 2 s, fan-out por lotes, continuidad, degradado
+  topic-registry.js          # Map<tópico, Set<conexión>>: alta O(1), recorrido O(suscriptores)
+  backpressure-policy.js     # > 64 KB deja de enviar detalle; drain → fotografía; > 512 KB o 30 s → reconectar
+  publico.repository.js      # XRANGE para reconexión, fotografía atómica (lua/snapshot.lua), INP
+apps/web/src/features/publico/  # /resultados: cliente SSE con jitter, render agrupado por cuadro, mapa de mesas
+apps/web/src/features/inicio/   # portada con el avance en vivo
+apps/web/src/features/ops/      # /ops: tablero RT-7
+apps/web/test/publico/          # continuidad, fotografía, un mensaje por ventana, Event Loop con 50.000 conexiones, cliente lento
+loadtest/                       # publico.mjs (20.000+ conexiones, avalancha con/sin jitter), jornada.ts, lento.mjs
+```
+
+- **Rutas:** `GET /api/publico/stream?topics=dep,mun:11` (SSE; `Last-Event-ID` o `?lastEventId=`), `GET /api/publico/snapshot?topic=…`, `POST /api/vitals` (INP).
+- **Reconexión (RF-6):** el id de cada mensaje es el id del stream `ev:all`. Al volver, el cliente recibe un único delta con lo que se perdió; si su id ya salió del historial, si faltan más de 2.000 eventos o pasaron más de 10 min, recibe la fotografía completa.
+- **Medido en las pruebas:** con 50.000 conexiones el Event Loop se bloquea **574 ms sin lotes y ~17 ms con lotes de 500**; 30 actas en la misma ventana producen **1** mensaje por suscriptor.
+- **Límite de aperturas** del stream por IP: `PUBLICO_LIMITE_POR_MIN` (30 por defecto; subirlo durante la prueba de carga).
 
 ## Despliegue
 
-Ver [`infra/deploy.md`](infra/deploy.md).
+Ver [`docs/despliegue-aws.md`](docs/despliegue-aws.md) y [`infra/deploy.md`](infra/deploy.md).

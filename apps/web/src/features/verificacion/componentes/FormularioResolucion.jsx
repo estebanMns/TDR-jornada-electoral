@@ -52,7 +52,7 @@ export function FormularioResolucion({ caso, deshabilitado, onResolver, onSoltar
         {OPCIONES.map(({ valor, etiqueta }) => (
           <label
             key={valor}
-            className={`cursor-pointer rounded-lg border px-3 py-1.5 text-sm ${decision === valor ? 'border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white dark:text-slate-900' : 'border-slate-300 dark:border-slate-700'}`}
+            className={`cursor-pointer rounded-lg border px-3 py-1.5 text-sm ${decision === valor ? 'border-tinta bg-tinta text-white dark:border-white ' : 'border-rejilla'}`}
           >
             <input
               type="radio"
@@ -85,7 +85,7 @@ export function FormularioResolucion({ caso, deshabilitado, onResolver, onSoltar
           onChange={(e) => setMotivo(e.target.value)}
           maxLength={500}
           rows={2}
-          className="mt-1 block w-full rounded-lg border border-slate-300 bg-transparent px-3 py-2 dark:border-slate-700"
+          className="mt-1 block w-full rounded-lg border border-rejilla bg-transparent px-3 py-2"
         />
       </label>
 

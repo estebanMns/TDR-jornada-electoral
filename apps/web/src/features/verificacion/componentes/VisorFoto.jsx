@@ -36,9 +36,9 @@ export function VisorFoto({ acta }) {
           Ajustar
         </Boton>
       </div>
-      <div className="min-h-[24rem] flex-1 overflow-auto rounded-lg border border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-950">
+      <div className="min-h-[24rem] flex-1 overflow-auto rounded-lg border border-rejilla bg-papel">
         {fallo ? (
-          <p className="grid h-full place-items-center p-8 text-sm text-slate-500">
+          <p className="grid h-full place-items-center p-8 text-sm text-tinta-suave">
             Foto no disponible para esta versión.
           </p>
         ) : (

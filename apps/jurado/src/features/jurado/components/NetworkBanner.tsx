@@ -10,14 +10,14 @@ export function NetworkBanner() {
 
   if (online && pending === 0) {
     return (
-      <div className="flex items-center gap-2 bg-emerald-600 px-4 py-1.5 text-sm text-white" role="status">
+      <div className="flex items-center gap-2 bg-registrada px-4 py-1.5 text-sm font-medium text-white dark:text-papel" role="status">
         <span className="size-2 rounded-full bg-white" aria-hidden /> En línea
       </div>
     );
   }
   return (
     <div
-      className={`flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm text-white ${online ? 'bg-blue-700' : 'bg-slate-700'}`}
+      className={`flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm font-medium ${online ? 'bg-indeleble text-white dark:text-papel' : 'bg-tinta text-papel'}`}
       role="status"
     >
       <span>

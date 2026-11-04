@@ -99,6 +99,18 @@ export async function loadSession(): Promise<Session | null> {
 }
 
 /**
+ * Cierra la sesión: borra la cookie en el servidor y lo guardado en el teléfono.
+ * Las actas que sigan en cola NO se borran (están en IndexedDB y se envían al volver a entrar).
+ */
+export async function logout(): Promise<void> {
+  localStorage.removeItem(DEV_TOKEN_KEY);
+  localStorage.removeItem(USER_CACHE_KEY);
+  current = null;
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => undefined);
+  window.location.assign('/login');
+}
+
+/**
  * DEVELOPMENT ONLY: accepts `#token=<jwt>` (printed by `pnpm dev-token`).
  * Stripped from production builds.
  */

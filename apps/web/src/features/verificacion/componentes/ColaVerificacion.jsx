@@ -38,7 +38,7 @@ export function ColaVerificacion() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Cola de verificación</h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-tinta-suave">
             {pendientes} pendientes · {enCurso} en curso · {resueltos} resueltos
           </p>
         </div>
@@ -46,7 +46,7 @@ export function ColaVerificacion() {
       </div>
 
       {miCaso && (
-        <Tarjeta className="flex items-center justify-between border-emerald-300 dark:border-emerald-800">
+        <Tarjeta className="flex items-center justify-between border-registrada/40">
           <span className="text-sm">
             Tienes tomado el caso <strong>{miCaso}</strong>.
           </span>
@@ -58,7 +58,7 @@ export function ColaVerificacion() {
 
       <Tarjeta className="overflow-x-auto p-0">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs uppercase text-slate-500 dark:border-slate-800">
+          <thead className="border-b border-rejilla text-xs uppercase text-tinta-suave">
             <tr>
               {['Prioridad', 'Acta', 'Municipio / puesto', 'Motivo', 'En cola', ''].map((t) => (
                 <th key={t} className="px-4 py-3 font-medium">
@@ -70,7 +70,7 @@ export function ColaVerificacion() {
           <tbody>
             {estado.items.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
+                <td colSpan={6} className="px-4 py-10 text-center text-tinta-suave">
                   No hay casos por verificar.
                 </td>
               </tr>
@@ -97,7 +97,7 @@ function FilaCaso({ item, ahora, esMio, deshabilitado, tomando, onTomar }) {
   const tomadoPorOtro = item.tomadoPor && !esMio;
   return (
     <tr
-      className={`border-b border-slate-100 last:border-0 dark:border-slate-800 ${tomadoPorOtro ? 'bg-slate-50 text-slate-400 dark:bg-slate-900/50' : ''}`}
+      className={`border-b border-rejilla last:border-0 ${tomadoPorOtro ? 'bg-papel text-tinta-suave' : ''}`}
     >
       <td className="px-4 py-3">
         <Insignia tono={TONO_PRIORIDAD[item.prioridad]}>
@@ -107,7 +107,7 @@ function FilaCaso({ item, ahora, esMio, deshabilitado, tomando, onTomar }) {
       <td className="px-4 py-3 font-mono">{item.acta}</td>
       <td className="px-4 py-3">
         {item.municipio.nombre}
-        <span className="block text-xs text-slate-500">
+        <span className="block text-xs text-tinta-suave">
           {item.puesto.nombre} · mesa {item.mesa}
         </span>
       </td>

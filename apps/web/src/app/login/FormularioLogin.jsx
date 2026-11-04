@@ -63,7 +63,7 @@ export function FormularioLogin({ siguiente }) {
       <button
         type="submit"
         disabled={enviando}
-        className="w-full rounded-lg bg-slate-900 px-4 py-2.5 font-medium text-white transition hover:bg-slate-700 disabled:opacity-60 dark:bg-white dark:text-slate-900"
+        className="w-full rounded-xl bg-indeleble px-4 py-3 font-semibold text-white transition hover:brightness-110 disabled:opacity-60 dark:text-papel"
       >
         {enviando ? 'Ingresando…' : 'Ingresar'}
       </button>
@@ -77,7 +77,7 @@ function Campo({ etiqueta, ...props }) {
       {etiqueta}
       <input
         required
-        className="mt-1 block w-full rounded-lg border border-slate-300 bg-transparent px-3 py-2 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 dark:border-slate-700"
+        className="mt-1.5 block w-full rounded-lg border border-rejilla bg-papel px-3 py-2.5 outline-none focus:border-indeleble focus:ring-2 focus:ring-indeleble/20"
         {...props}
       />
     </label>

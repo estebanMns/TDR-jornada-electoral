@@ -14,7 +14,7 @@ adoptDevTokenFromUrl();
 export function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<p className="p-6 text-slate-500">Cargando…</p>}>
+      <Suspense fallback={<p className="p-6 text-tinta-suave">Cargando…</p>}>
         <Routes>
           <Route path="/" element={<Navigate to="/jurado" replace />} />
           <Route

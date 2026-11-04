@@ -83,6 +83,11 @@ Lógica (todo dentro del script):
 - [ ] Pantallas (GENERAL §5): formulario con cámara (`<input type="file" accept="image/*" capture="environment">`, comprimir a ~1280 px en canvas), campos numéricos grandes para móvil, total en vivo con aviso si no cuadra, *Corregir* = versión +1; bandeja con chips de estado claros y comprobante.
 - [ ] Indicador de red y del estado del servidor (si `NO_REGISTRADA`: "No registrada. Está guardada en tu teléfono y se enviará sola").
 
+### 6. Frontend en Vercel, API en AWS
+El frontend se publica en Vercel y la API vive en otro dominio (ver `meneses-despliegue.md`, Parte A). En tu código:
+- [ ] Crear `apiUrl(path)` en `apps/web/src/shared/net/` (`(import.meta.env.VITE_API_URL ?? '') + path`) y usarlo en todas las llamadas a la API (envío de actas, estado, fotos, login). En local queda vacío y sigue funcionando el proxy de Vite.
+- [ ] Cuando tu rama esté lista, súbela a `main`: Vercel construye desde ahí y la URL del frontend solo muestra algo cuando `apps/web` está en `main`.
+
 ## Pruebas necesarias (vitest + Redis real)
 1. **Idempotencia**: el mismo acta 5 veces → `tot:dep` suma una vez; 1 `REGISTRADA` + 4 `YA_REGISTRADA`.
 2. **Idem expirado**: borrar `idem:*` y reenviar → `YA_REGISTRADA`, no suma.

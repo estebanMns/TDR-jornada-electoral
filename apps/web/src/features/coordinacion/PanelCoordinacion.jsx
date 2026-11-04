@@ -23,7 +23,7 @@ export function PanelCoordinacion() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Coordinación</h1>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-tinta-suave">
             {auditores.length} conectados · {activos} activos ·{' '}
             <Link href="/verificacion" className="underline">
               ver la cola
@@ -41,7 +41,7 @@ export function PanelCoordinacion() {
 
       {auditores.length === 0 ? (
         <Tarjeta>
-          <p className="text-sm text-slate-500">Ningún auditor conectado en este momento.</p>
+          <p className="text-sm text-tinta-suave">Ningún auditor conectado en este momento.</p>
         </Tarjeta>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -59,7 +59,7 @@ export function PanelCoordinacion() {
 function Contador({ etiqueta, valor }) {
   return (
     <Tarjeta>
-      <p className="text-sm text-slate-500">{etiqueta}</p>
+      <p className="text-sm text-tinta-suave">{etiqueta}</p>
       <p className="text-3xl font-semibold tabular-nums">{valor}</p>
     </Tarjeta>
   );
