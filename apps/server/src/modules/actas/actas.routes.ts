@@ -5,6 +5,7 @@ import {
   ACTA_ID_PATTERN,
   actaSubmissionSchema,
   idempotencyKeySchema,
+  resolutionInputSchema,
   type ActaReceipt,
   type ReceiptResult,
 } from '@preconteo/contracts';
@@ -107,6 +108,18 @@ export async function actasRoutes(app: FastifyInstance, options: ActasRoutesOpti
     });
     return reply.code(204).send();
   });
+
+  // Auditor decisions, forwarded by the verification module of the platform server
+  // after it closed the case (GENERAL §7.5). Applied with the same atomic script.
+  app.post(
+    '/api/actas/resolutions',
+    { preHandler: [authorize('AUDITOR', 'COORDINATOR')] },
+    async (request, reply) => {
+      const input = resolutionInputSchema.safeParse(request.body);
+      if (!input.success) return sendValidationError(reply, input.error);
+      return reply.send(await service.applyResolution(input.data));
+    },
+  );
 
   // Polled every 15 s by the juror app: ETag makes the common case a tiny 304.
   app.get('/api/actas/mine', { preHandler: [jurorOnly] }, async (request, reply) => {

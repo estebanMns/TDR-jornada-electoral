@@ -53,6 +53,8 @@ export class ActasRepository {
       munId: Number(entry.mun),
       enabled: Number(entry.enabled),
       actaId: entry.actaId,
+      stationName: entry.stationName ?? `Puesto ${entry.station}`,
+      munName: entry.munName ?? `Municipio ${entry.mun}`,
     };
     this.catalogCache.set(tableId, table);
     return table;

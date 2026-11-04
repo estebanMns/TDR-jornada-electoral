@@ -7,6 +7,16 @@ export interface CatalogTableEntry {
   munId: number;
   enabled: number;
   actaId: string;
+  stationName: string;
+  munName: string;
+}
+
+/** Position of a review case in `verif:queue` (verification module contract). */
+export interface ReviewPlacement {
+  /** 1 = reviewed first … 3 = normal. */
+  level: number;
+  /** level · 1e13 + enqueuedAt (lower score = reviewed first). */
+  score: number;
 }
 
 interface BaseContext {
@@ -16,6 +26,8 @@ interface BaseContext {
   stationId: number;
   munId: number;
   enabled: number;
+  stationName: string;
+  munName: string;
   /** Epoch ms of reception (ts_rx). */
   tsRx: number;
   instance: string;
@@ -33,8 +45,10 @@ export interface SubmitContext extends BaseContext {
   receiptId: string;
   doubtful: boolean;
   reason: string;
-  /** Score in `verif:queue` (lower = reviewed first). */
-  priority: number;
+  /** Placement of the case if this version is doubtful. */
+  review: ReviewPlacement;
+  /** Placement of the case if this version conflicts with the registered one. */
+  conflictReview: ReviewPlacement;
 }
 
 /** Context of `apply_acta.lua` for an auditor decision. */

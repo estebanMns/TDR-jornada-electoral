@@ -18,7 +18,7 @@ import {
   PhotoStorageUnavailableError,
 } from './actas.errors';
 import type { ActasRepository } from './actas.repository';
-import { assessActa, contentHash, reviewPriority, sha256Hex } from './actas.rules';
+import { assessActa, conflictPriority, contentHash, reviewPriority, sha256Hex } from './actas.rules';
 import type { ApplyActaOutcome, CatalogTableEntry } from './actas.types';
 import { actaPhotoPath, type PhotoStorage } from './photo.storage';
 
@@ -81,6 +81,8 @@ export class ActasService {
         stationId: table.stationId,
         munId: table.munId,
         enabled: table.enabled,
+        stationName: table.stationName,
+        munName: table.munName,
         tsRx: receivedAt,
         instance: this.deps.instanceId,
         juror: juror.sub,
@@ -92,7 +94,8 @@ export class ActasService {
         receiptId: this.newReceiptId(),
         doubtful: assessment.doubtful,
         reason: assessment.reason,
-        priority: reviewPriority(submission, assessment, receivedAt),
+        review: reviewPriority(submission, assessment, receivedAt),
+        conflictReview: conflictPriority(receivedAt),
       }),
     );
     this.deps.metrics.observe('actas_lua_ms', performance.now() - startedAt);
@@ -131,6 +134,8 @@ export class ActasService {
         stationId: table.stationId,
         munId: table.munId,
         enabled: table.enabled,
+        stationName: table.stationName,
+        munName: table.munName,
         tsRx: this.now(),
         instance: this.deps.instanceId,
         decision: input.decision,

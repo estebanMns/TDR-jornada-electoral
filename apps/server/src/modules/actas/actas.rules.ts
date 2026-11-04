@@ -6,7 +6,7 @@ import {
   type ActaSubmission,
   type DoubtReason,
 } from '@preconteo/contracts';
-import type { CatalogTableEntry } from './actas.types';
+import type { CatalogTableEntry, ReviewPlacement } from './actas.types';
 
 export interface ActaAssessment {
   doubtful: boolean;
@@ -30,26 +30,36 @@ export function assessActa(submission: ActaSubmission, table: CatalogTableEntry)
   return { doubtful: false, reason: '', tallyDifference: 0 };
 }
 
-const CORRECTION_BONUS_MS = 60_000;
-const LARGE_MISMATCH_BONUS_MS = 120_000;
 const LARGE_MISMATCH_RATIO = 0.05;
+const LOWEST_LEVEL = 3;
+/** Same formula as `scoreDeCaso` of the verification module. */
+const LEVEL_WEIGHT = 1e13;
+
+export function reviewPlacement(level: number, enqueuedAt: number): ReviewPlacement {
+  return { level, score: level * LEVEL_WEIGHT + enqueuedAt };
+}
 
 /**
- * Score of the case in `verif:queue` (lower = first). Oldest first, but
- * corrections (version > 1) and large mismatches jump ahead.
+ * Review priority (1 = first … 3 = normal): corrections (version > 1) and
+ * large mismatches move up one level each; within a level, oldest first.
  */
 export function reviewPriority(
   submission: ActaSubmission,
   assessment: ActaAssessment,
   receivedAt: number,
-): number {
-  let priority = receivedAt;
-  if (submission.version > 1) priority -= CORRECTION_BONUS_MS;
+): ReviewPlacement {
+  let level = LOWEST_LEVEL;
+  if (submission.version > 1) level -= 1;
   const largeMismatch =
     assessment.reason === DOUBT_REASONS.votersExceedEnabled ||
     Math.abs(assessment.tallyDifference) > Math.max(1, submission.voters * LARGE_MISMATCH_RATIO);
-  if (largeMismatch) priority -= LARGE_MISMATCH_BONUS_MS;
-  return priority;
+  if (largeMismatch) level -= 1;
+  return reviewPlacement(level, receivedAt);
+}
+
+/** Two different copies of the same version: always reviewed first. */
+export function conflictPriority(receivedAt: number): ReviewPlacement {
+  return reviewPlacement(1, receivedAt);
 }
 
 /**
