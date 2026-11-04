@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
-import type { Catalog } from '@preconteo/contracts';
+import type { Catalog } from '@electoral/shared';
 
 const UPSERT_CHUNK = 1_000;
 
@@ -41,14 +41,12 @@ export async function loadCatalogIntoSupabase(supabase: SupabaseClient, catalog:
   await upsertInChunks(supabase, 'vote_options', catalog.voteOptions, 'id');
 }
 
-/** Same pattern as the demo accounts of migration 001 (`auditor001`…). */
 export function jurorUsername(tableId: number): string {
-  return `jurado${String(tableId).padStart(4, '0')}`;
+  return `juror-${String(tableId).padStart(4, '0')}`;
 }
 
 /**
- * Creates one demo juror per table in the platform table `usuarios`
- * (migration 001: `rol = 'JURADO'` requires `mesa`).
+ * Creates one demo juror per table in the platform `users` table (migration 001).
  *
  * TEST ENVIRONMENT ONLY: every juror shares `SEED_JUROR_PASSWORD`, so the
  * bcrypt hash is computed once and reused instead of 6,400 times.
@@ -61,13 +59,13 @@ export async function loadJurorUsers(
   const passwordHash = await bcrypt.hash(sharedPassword, 10);
   await upsertInChunks(
     supabase,
-    'usuarios',
+    'users',
     catalog.tables.map((table) => ({
       username: jurorUsername(table.id),
       password_hash: passwordHash,
-      rol: 'JURADO',
-      nombre: `Jurado mesa ${table.id}`,
-      mesa: table.id,
+      role: 'JUROR',
+      name: `Jurado mesa ${table.id}`,
+      table_id: table.id,
     })),
     'username',
   );

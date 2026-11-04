@@ -25,8 +25,6 @@ export interface ActasModuleOptions {
   instanceId: string;
   authorize: Authorize;
   jurorRateLimit: preHandlerAsyncHookHandler;
-  /** Supabase Storage bucket for the acta photos. */
-  photoBucket: string;
   /** Used when Supabase is not configured (local development). */
   localPhotoDirectory: string;
   /** Factory of the dedicated connection used by the persistence worker. */
@@ -39,7 +37,7 @@ export const actasModule = fp<ActasModuleOptions>(
   async (app, options) => {
     const repository = new ActasRepository(options.redis);
     const photoStorage = options.supabase
-      ? new SupabasePhotoStorage(options.supabase, options.photoBucket)
+      ? new SupabasePhotoStorage(options.supabase)
       : new LocalPhotoStorage(options.localPhotoDirectory);
     const service = new ActasService({
       repository,

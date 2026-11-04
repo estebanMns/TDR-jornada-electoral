@@ -1,6 +1,6 @@
 import type { FastifyBaseLogger } from 'fastify';
 import type { Redis } from 'ioredis';
-import { PERSISTENCE_CONSUMER_GROUP, redisKeys, type PersistenceEventKind } from '@preconteo/contracts';
+import { PERSISTENCE_CONSUMER_GROUP, redisKeys, type PersistenceEventKind } from '@electoral/shared';
 import type { StoredVersionRecord } from './actas.types';
 import type { ActaHistoryStore, PhotoStored, ResolutionRecord, StatusChange } from './history.store';
 

@@ -1,10 +1,10 @@
 /**
- * Core of the actas service. Fixed-window counter in Redis
+ * Bootstrap core (platform owner: Meneses). Fixed-window counter in Redis
  * (`rl:{credential}:{window}` INCR + EXPIRE), GENERAL §7.1.
  */
 import type { FastifyReply, FastifyRequest, preHandlerAsyncHookHandler } from 'fastify';
 import type { Redis } from 'ioredis';
-import { redisKeys } from '@preconteo/contracts';
+import { redisKeys } from '@electoral/shared';
 
 export interface RateLimitOptions {
   redis: Redis;

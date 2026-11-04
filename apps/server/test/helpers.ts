@@ -9,7 +9,7 @@ import {
   type CatalogTable,
   type JwtPayload,
   type Votes,
-} from '@preconteo/contracts';
+} from '@electoral/shared';
 import { generateCatalog } from '../../../scripts/catalog/generateCatalog';
 import { loadCatalogIntoRedis } from '../../../scripts/catalog/loadRedis';
 import { createRandom, type Random } from '../../../scripts/catalog/random';

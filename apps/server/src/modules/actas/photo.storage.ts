@@ -7,20 +7,19 @@ export interface PhotoStorage {
   put(path: string, bytes: Uint8Array, contentType: string): Promise<void>;
 }
 
+export const ACTA_PHOTOS_BUCKET = 'acta-photos';
+
 export function actaPhotoPath(actaId: string, version: number): string {
   return `${actaId}/v${version}.jpg`;
 }
 
-/** Private Supabase Storage bucket (production): `SUPABASE_BUCKET_FOTOS`, default `actas-fotos`. */
+/** Private Supabase Storage bucket (production). */
 export class SupabasePhotoStorage implements PhotoStorage {
-  constructor(
-    private readonly supabase: SupabaseClient,
-    private readonly bucket: string,
-  ) {}
+  constructor(private readonly supabase: SupabaseClient) {}
 
   async put(path: string, bytes: Uint8Array, contentType: string): Promise<void> {
     const { error } = await this.supabase.storage
-      .from(this.bucket)
+      .from(ACTA_PHOTOS_BUCKET)
       .upload(path, bytes, { contentType, upsert: true });
     if (error) throw error;
   }

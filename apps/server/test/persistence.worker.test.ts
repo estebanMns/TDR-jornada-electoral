@@ -1,6 +1,6 @@
 import type { Redis } from 'ioredis';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { PERSISTENCE_CONSUMER_GROUP, redisKeys } from '@preconteo/contracts';
+import { PERSISTENCE_CONSUMER_GROUP, redisKeys } from '@electoral/shared';
 import type { StoredVersionRecord } from '../src/modules/actas/actas.types';
 import {
   HistoryRowMissingError,

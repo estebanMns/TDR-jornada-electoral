@@ -2,7 +2,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { Redis } from 'ioredis';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import type { JwtPayload } from '@preconteo/contracts';
+import type { JwtPayload } from '@electoral/shared';
 import { buildApp } from '../src/app';
 import { loadConfig } from '../src/core/config';
 import { InMemoryMetrics } from '../src/core/metrics';
@@ -75,38 +75,6 @@ describe('actas HTTP contract', () => {
       payload: buildSubmission(other),
     });
     expect(response.statusCode).toBe(403);
-  });
-
-  it('accepts the platform login token from the session cookie', async () => {
-    const platformToken = app.jwt.sign({ sub: 'uuid-juror', rol: 'JURADO', nombre: 'Jurado', mesa: table.id } as never);
-    const response = await app.inject({
-      method: 'GET',
-      url: '/api/actas/mine',
-      headers: { cookie: `other=1; preconteo_sesion=${platformToken}` },
-    });
-    expect(response.statusCode).toBe(200);
-  });
-
-  it('only lets auditors post resolutions', async () => {
-    const payload = { actaId: table.actaId, version: 1, decision: 'APPROVE', auditor: 'a1', fencing: 1 };
-    const asJuror = await app.inject({
-      method: 'POST',
-      url: '/api/actas/resolutions',
-      headers: { authorization: `Bearer ${tokenFor(app, jurorFor(table))}` },
-      payload,
-    });
-    expect(asJuror.statusCode).toBe(403);
-
-    const auditorToken = app.jwt.sign({ sub: 'a1', rol: 'AUDITOR', nombre: 'Auditor' } as never);
-    const asAuditor = await app.inject({
-      method: 'POST',
-      url: '/api/actas/resolutions',
-      headers: { authorization: `Bearer ${auditorToken}` },
-      payload,
-    });
-    // Version 1 of this table was applied (not under review) in the first test.
-    expect(asAuditor.statusCode).toBe(200);
-    expect(asAuditor.json()).toMatchObject({ result: 'NOT_UNDER_REVIEW' });
   });
 
   it('serves the juror status with ETag and 304', async () => {

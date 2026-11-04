@@ -1,0 +1,22 @@
+{
+  "name": "@electoral/loadtest",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Load tests for the presentation (owner: Evelyn). See README.md.",
+  "scripts": {
+    "publico": "tsx publico.ts",
+    "jornada": "tsx jornada.ts",
+    "lento": "tsx lento.ts",
+    "avalancha": "tsx avalancha.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@electoral/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

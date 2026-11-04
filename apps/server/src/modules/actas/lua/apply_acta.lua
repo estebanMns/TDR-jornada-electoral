@@ -24,11 +24,6 @@ KEYS
   12 ev:all                 13 ev:actas
   14 verif:queue            15 verif:case:{id}
 
-The review queue and cases follow the verification module's contract
-(packages/shared/src/schemas/verificacion.js → casoVerificacionSchema): the case
-is a JSON STRING, announced on ch:verif as { tipo = 'caso_nuevo', item }. Once a
-case is enqueued it belongs to that module; RESOLUTION mode does not touch it.
-
 ARGV
   1  JSON context (see actas.repository.ts → ApplyActaContext)
 
@@ -57,7 +52,7 @@ for _, id in ipairs(ctx.rankFields) do rankable[id] = true end
 -- --------------------------------------------------------------- state
 
 local state = redis.call('HMGET', K_ACTA,
-  'vmax', 'vapplied', 'hash', 'status', 'appliedVotes', 'appliedVoters', 'receiptId', 'registeredAt', 'resolvedVersion', 'fencing')
+  'vmax', 'vapplied', 'hash', 'status', 'appliedVotes', 'appliedVoters', 'receiptId', 'registeredAt', 'resolvedVersion')
 local vmax = tonumber(state[1]) or 0
 local vapplied = tonumber(state[2]) or 0
 local storedHash = state[3]
@@ -67,7 +62,6 @@ local appliedVoters = tonumber(state[6]) or 0
 local storedReceiptId = state[7]
 local storedRegisteredAt = tonumber(state[8])
 local resolvedVersion = tonumber(state[9]) or 0
-local lastFencing = tonumber(state[10]) or -1
 
 -- --------------------------------------------------------------- helpers
 
@@ -81,15 +75,9 @@ local function persist(kind, data)
   xadd(K_EV_ACTAS, ctx.evActasMaxLen, { 'kind', kind, 'data', cjson.encode(data) })
 end
 
--- Doubt reasons of this module → `motivo` of the verification contract.
-local CASE_REASON = {
-  TALLY_MISMATCH = 'DESCUADRE',
-  VOTERS_EXCEED_ENABLED = 'SUFRAGANTES_EXCEDEN',
-  CONTENT_CONFLICT = 'CONFLICTO',
-}
-
-local function publishVerification(message)
-  redis.call('PUBLISH', ctx.verificationChannel, cjson.encode(message))
+local function publishVerification(type)
+  redis.call('PUBLISH', ctx.verificationChannel,
+    cjson.encode({ type = type, actaId = ctx.actaId, version = ctx.version }))
 end
 
 -- Stores the receipt under the idempotency key (first writer wins) and returns it.
@@ -163,46 +151,33 @@ local function transition(newVotes, newVoters, newVersion, reason)
   end
 end
 
---[[
-Creates the review case of the current version (one case per acta, always
-about vmax). `review` = { level = 1..3 (1 = first), score } computed in TS:
-score = level * 1e13 + enqueuedAt (scoreDeCaso of the verification module).
-]]
-local function enqueueCase(reason, record, review, conflicting)
-  local case = {
-    acta = ctx.actaId, version = ctx.version, prioridad = review.level,
-    motivo = CASE_REASON[reason], mesa = ctx.tableId,
-    puesto = { id = ctx.stationId, nombre = ctx.stationName },
-    municipio = { id = ctx.munId, nombre = ctx.munName },
-    votos = record.votes, sufragantes = record.voters, habilitados = ctx.enabled,
-    encoladaEn = ctx.tsRx,
+-- Creates the review case of the current version (one case per acta, always about vmax).
+local function enqueueCase(reason, record, extra)
+  redis.call('DEL', K_CASE)
+  local fields = {
+    'actaId', ctx.actaId, 'version', ctx.version, 'tableId', ctx.tableId,
+    'stationId', ctx.stationId, 'munId', ctx.munId, 'juror', record.juror,
+    'reason', reason, 'votes', cjson.encode(record.votes), 'voters', record.voters,
+    'enabled', ctx.enabled, 'photoHash', record.photoHash, 'createdAt', ctx.tsRx, 'status', 'PENDING',
   }
-  if conflicting then
-    -- Additive fields: the copy that disagrees with the registered one.
-    case.votosEnConflicto = conflicting.votes
-    case.sufragantesEnConflicto = conflicting.voters
-  end
-  redis.call('SET', K_CASE, cjson.encode(case))
-  redis.call('ZADD', K_QUEUE, review.score, ctx.actaId)
-  publishVerification({ tipo = 'caso_nuevo', item = case })
+  for i = 1, #(extra or {}) do fields[#fields + 1] = extra[i] end
+  redis.call('HSET', K_CASE, unpack(fields))
+  redis.call('ZADD', K_QUEUE, ctx.priority, ctx.actaId)
+  publishVerification('case_new')
 end
 
 -- A newer version makes the pending case of an older one meaningless.
 local function supersedeCase()
   local removed = redis.call('ZREM', K_QUEUE, ctx.actaId)
-  local existed = redis.call('DEL', K_CASE)
-  if removed == 1 or existed == 1 then
-    publishVerification({ tipo = 'caso_resuelto', acta = ctx.actaId, motivo = 'SUPERSEDED' })
+  if removed == 1 or redis.call('HGET', K_CASE, 'status') == 'PENDING' then
+    redis.call('HSET', K_CASE, 'status', 'SUPERSEDED')
+    publishVerification('case_superseded')
   end
 end
 
 -- --------------------------------------------------------------- RESOLUTION
 
 if ctx.mode == 'RESOLUTION' then
-  -- Fencing: a decision taken under an older lock than one already applied is late.
-  if ctx.fencing <= lastFencing then
-    return cjson.encode({ result = 'STALE_FENCING', status = status })
-  end
   if ctx.version < vmax then
     return cjson.encode({ result = 'OBSOLETE', status = status })
   end
@@ -225,9 +200,10 @@ if ctx.mode == 'RESOLUTION' then
     transition(votes, voters, ctx.version, 'RESOLUTION')
   end
 
-  -- The verification module already closed the case and the queue entry.
   redis.call('HSET', K_ACTA, 'status', newStatus, 'reason', ctx.decision, 'resolvedVersion', ctx.version,
-    'fencing', ctx.fencing, 'updatedAt', ctx.tsRx)
+    'updatedAt', ctx.tsRx)
+  redis.call('ZREM', K_QUEUE, ctx.actaId)
+  if redis.call('EXISTS', K_CASE) == 1 then redis.call('HSET', K_CASE, 'status', 'RESOLVED') end
 
   local resolution = {
     actaId = ctx.actaId, version = ctx.version, status = newStatus, decision = ctx.decision,
@@ -278,7 +254,10 @@ if ctx.version == vmax then
     redis.call('HSET', K_ACTA, 'status', 'CONFLICT', 'reason', 'CONTENT_CONFLICT', 'updatedAt', ctx.tsRx)
     -- The case shows the first registered content and the conflicting copy side by side.
     local original = cjson.decode(redis.call('GET', K_VERSION))
-    enqueueCase('CONTENT_CONFLICT', original, ctx.conflictReview, { votes = ctx.votes, voters = ctx.voters })
+    enqueueCase('CONTENT_CONFLICT', original, {
+      'conflictingVotes', cjson.encode(ctx.votes), 'conflictingVoters', ctx.voters,
+      'conflictingPhotoHash', ctx.photoHash, 'conflictingJuror', ctx.juror,
+    })
     persist('STATUS', { actaId = ctx.actaId, version = ctx.version, status = 'CONFLICT', reason = 'CONTENT_CONFLICT' })
   end
   return finish({ result = 'CONFLICT', reason = 'CONTENT_CONFLICT', receiptId = ctx.receiptId, registeredAt = ctx.tsRx })
@@ -310,7 +289,7 @@ local versionRecord = {
 redis.call('SET', K_VERSION, cjson.encode(versionRecord))
 redis.call('SADD', K_JUROR, ctx.actaId)
 
-if not valid then enqueueCase(reason, versionRecord, ctx.review) end
+if not valid then enqueueCase(reason, versionRecord) end
 persist('VERSION', versionRecord)
 
 return finish({

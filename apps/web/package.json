@@ -1,34 +1,32 @@
 {
-  "name": "@preconteo/web",
+  "name": "@electoral/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --env-file-if-exists=../../.env server.js",
-    "build": "next build",
-    "start": "NODE_ENV=production node server.js",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "fake:dudosas": "node --env-file-if-exists=../../.env scripts/fake-dudosas.js",
-    "smoke": "node --env-file-if-exists=../../.env scripts/smoke-dos-instancias.js"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@preconteo/shared": "workspace:*",
-    "@supabase/supabase-js": "^2.79.0",
-    "bcryptjs": "^3.0.2",
-    "ioredis": "^5.8.2",
-    "jose": "^6.1.0",
-    "next": "^16.4.4",
-    "pino": "^10.1.0",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "server-only": "^0.0.1",
-    "ws": "^8.18.3",
-    "zod": "^4.1.12"
+    "@electoral/shared": "workspace:*",
+    "idb-keyval": "^6.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router": "^8.5.1",
+    "uplot": "^1.6.32",
+    "web-vitals": "^6.2.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.16",
-    "tailwindcss": "^4.1.16",
-    "vitest": "^4.0.6"
+    "@tailwindcss/vite": "^4.3.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.2.1",
+    "tailwindcss": "^4.3.4",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.5",
+    "vite-plugin-pwa": "^2.0.0",
+    "workbox-window": "^7.4.1"
   }
 }
