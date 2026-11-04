@@ -16,25 +16,12 @@ import {
   type ActaSubmission,
   type Catalog,
   type JurorActaState,
-  type JwtPayload,
   type Votes,
 } from '@electoral/shared';
 import catalogJson from '../packages/shared/catalog.json' with { type: 'json' };
+import { devJurorPayload, devSecret, signDevToken } from './lib/devToken';
 
 const catalog = catalogJson as Catalog;
-
-function base64url(value: string): string {
-  return Buffer.from(value).toString('base64url');
-}
-
-/** HS256 token equivalent to the one issued by the login endpoint. */
-function signDevToken(payload: JwtPayload, secret: string): string {
-  const header = base64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  const now = Math.floor(Date.now() / 1_000);
-  const body = base64url(JSON.stringify({ ...payload, iat: now, exp: now + 8 * 3_600 }));
-  const signature = createHmac('sha256', secret).update(`${header}.${body}`).digest('base64url');
-  return `${header}.${body}.${signature}`;
-}
 
 function randomVotes(voters: number): Votes {
   const votes = Object.fromEntries(VOTE_OPTION_IDS.map((option) => [option, 0])) as Votes;
@@ -58,15 +45,11 @@ async function main(): Promise<void> {
     },
   });
   const apiUrl = process.env.API_URL ?? 'http://localhost:3000';
-  const secret = process.env.JWT_SECRET ?? 'change-me-dev-only';
   const tableId = Number(values.table);
   const table = catalog.tables.find((candidate) => candidate.id === tableId);
   if (!table) throw new Error(`Table ${tableId} is not in the catalog`);
 
-  const token = signDevToken(
-    { sub: `juror-${String(tableId).padStart(4, '0')}`, role: 'JUROR', name: `Jurado mesa ${tableId}`, tableId },
-    secret,
-  );
+  const token = signDevToken(devJurorPayload(tableId), devSecret());
   const headers = { authorization: `Bearer ${token}`, 'content-type': 'application/json' };
 
   let version = 1;

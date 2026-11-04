@@ -13,7 +13,8 @@
     "typecheck": "tsc -p scripts && pnpm -r typecheck",
     "test": "pnpm -r test",
     "seed": "tsx scripts/seed.ts",
-    "fake-acta": "tsx scripts/fake-acta.ts"
+    "fake-acta": "tsx scripts/fake-acta.ts",
+    "dev-token": "tsx scripts/dev-token.ts"
   },
   "devDependencies": {
     "@electoral/shared": "workspace:*",
