@@ -34,6 +34,7 @@ Coexisten **tres** transportes (RT-5 exige al menos dos).
 | Frontend | **React + Vite + React Router**, **Tailwind CSS + shadcn/ui**, `vite-plugin-pwa` (jurado offline), `idb-keyval` (IndexedDB), `web-vitals` (INP), `uPlot` o `recharts` solo en el tablero de operación |
 | Balanceador | **Nginx** round-robin **sin** `ip_hash`/afinidad, `proxy_buffering off` para SSE, upgrade para WS |
 | Despliegue | **Docker Compose** en una VM en la nube: `nginx` + `app1…app8` + `redis` (+ web estática servida por nginx). Recomendado: VM 4 vCPU / 8 GB (Azure for Students, DigitalOcean o GCP). Supabase en su nube (plan gratuito). |
+| Despliegue | **Docker Compose** en una VM en la nube: `nginx` + `app1…app8` + `redis` (+ web estática servida por nginx). **AWS EC2** (`t3.medium` en desarrollo, `m6i.xlarge` para carga y sustentación, región `us-east-1`). Supabase en su nube (plan gratuito). |
 | Pruebas | `vitest` contra un Redis real (servicio `redis-test` del compose). Solo las pruebas que demuestran garantías (ver cada MD). |
 | Carga | Scripts Node propios en `loadtest/` (clientes SSE crudos sobre `http`, simulador de jurados, cliente lento, avalancha) |
 

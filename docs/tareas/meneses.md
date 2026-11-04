@@ -53,6 +53,7 @@ CODEOWNERS, .env.example, README.md
 - [ ] `infra/docker-compose.yml`: `nginx`, `app1…app8` (anchor YAML para no repetir, `INSTANCE_ID=appN`), `redis` (AOF `everysec`, `maxmemory` + política `noeviction`), `redis-test` para pruebas.
 - [ ] `infra/nginx.conf`: `upstream` round-robin **sin** `ip_hash`/`hash`/`sticky`; `location /api/publico/stream` y `/api/ops/stream` con `proxy_buffering off`, `proxy_read_timeout 1h`, HTTP/1.1; `location /ws/` con `Upgrade`/`Connection`; `worker_connections` alto; SPA con `try_files`.
 - [ ] VM en la nube con HTTPS y URL pública → seguir la **Guía de despliegue** (al final de este documento) y copiarla como `infra/deploy.md` cuando quede probada.
+- [ ] VM en la nube con HTTPS y URL pública → seguir [meneses-despliegue.md](meneses-despliegue.md).
 - [ ] Demostrar RT-1/RT-2: abrir varias conexiones y mostrar `X-Instance` distintos (botón en `/ops` o `curl` en bucle).
 
 ### 3. Verificación (RF-7) — `modules/verificacion`
@@ -167,6 +168,7 @@ docker compose -f infra/docker-compose.yml ps     # 8 apps + nginx + redis "heal
 - Correr `loadtest/` desde otra máquina (coordinar con Evelyn); tener a mano los comandos para tumbar una instancia (`docker stop`) y Redis (`docker stop infra-redis-1`) para RF-10.
 - Revisar que queda crédito en la nube y que el certificado no vence.
 - Apagar la VM después de la entrega para no gastar el crédito.
+Eres el responsable del despliegue (backend, frontend y Redis; Supabase lo crea Jose). La guía completa, con los archivos del esqueleto listos para copiar, está en **[meneses-despliegue.md](meneses-despliegue.md)**. Despliega el esqueleto desde el primer día y vuelve a desplegar cada vez que algo entre a `main`.
 
 ## Pruebas necesarias (vitest + Redis real)
 1. **Exclusividad**: 20 `tomar` concurrentes del mismo caso → exactamente 1 éxito.
