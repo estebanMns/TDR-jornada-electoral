@@ -6,9 +6,11 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import type { Redis } from 'ioredis';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AppConfig } from './core/config';
-import { authPlugin } from './core/auth';
+import { authorize, authPlugin } from './core/auth';
 import type { Metrics } from './core/metrics';
+import { fixedWindowRateLimit } from './core/rateLimit';
 import { redisStatus } from './core/redis';
+import { actasModule } from './modules/actas';
 
 export interface AppDependencies {
   config: AppConfig;
@@ -35,6 +37,21 @@ export async function buildApp(deps: AppDependencies): Promise<FastifyInstance> 
   app.get('/api/health', async (_request, reply) =>
     redisStatus(redis) === 'ok' ? { status: 'ok' } : reply.code(503).send({ status: 'degraded' }),
   );
+
+  await app.register(actasModule, {
+    redis,
+    supabase: deps.supabase,
+    metrics: deps.metrics,
+    instanceId: config.INSTANCE_ID,
+    authorize,
+    jurorRateLimit: fixedWindowRateLimit({
+      redis,
+      limit: 20,
+      windowSeconds: 60,
+      credential: (request) => `juror:${request.user.sub}`,
+    }),
+    localPhotoDirectory: config.PHOTO_DIR,
+  });
 
   return app;
 }
