@@ -1,0 +1,22 @@
+# Dependencies and build output
+node_modules/
+dist/
+.next/
+out/
+coverage/
+apps/jurado/dev-dist/
+
+# Local data (photos stored by the actas server in development)
+.data/
+
+# Secrets: only the example file is versioned
+.env
+.env.*
+!.env.example
+
+# Local tooling
+.claude/
+supabase/apply_all.sql
+
+*.log
+.DS_Store
